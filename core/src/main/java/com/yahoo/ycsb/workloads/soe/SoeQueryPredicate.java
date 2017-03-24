@@ -3,7 +3,7 @@ package com.yahoo.ycsb.workloads.soe;
 /**
  * Created by oleksandr.gyryk on 3/20/17.
  */
-public class SoaQueryPredicate {
+public class SoeQueryPredicate {
 
   public static final String SOE_PREDICATE_TYPE_STRING = "string";
   public static final String SOE_PREDICATE_TYPE_INTEGER = "int";
@@ -19,10 +19,10 @@ public class SoaQueryPredicate {
   public String type = SOE_PREDICATE_TYPE_STRING;
 
 
-  public SoaQueryPredicate nestedPredicateA = null;
-  public SoaQueryPredicate nestedPredicateB = null;
-  public SoaQueryPredicate nestedPredicateC = null;
-  public SoaQueryPredicate nestedPredicateD = null;
+  public SoeQueryPredicate nestedPredicateA = null;
+  public SoeQueryPredicate nestedPredicateB = null;
+  public SoeQueryPredicate nestedPredicateC = null;
+  public SoeQueryPredicate nestedPredicateD = null;
 
 
 }
