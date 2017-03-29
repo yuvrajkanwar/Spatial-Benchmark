@@ -17,6 +17,8 @@
 
 package com.yahoo.ycsb;
 
+import com.yahoo.ycsb.generator.soe.Generator;
+
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
@@ -123,6 +125,8 @@ public abstract class DB {
    */
   public abstract Status insert(String table, String key, HashMap<String, ByteIterator> values);
 
+
+
   /**
    * Delete a record from the database.
    *
@@ -131,4 +135,18 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status delete(String table, String key);
+
+
+  /**
+   *
+   *  SOE operations.
+   *
+   */
+
+  // overloading the standard "insert" operation as it used by YCSB for loading data
+  public Status soeLoad(Generator generator) {
+    return null;
+  }
+
+
 }

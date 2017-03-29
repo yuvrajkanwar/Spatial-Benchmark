@@ -17,6 +17,7 @@
 
 package com.yahoo.ycsb;
 
+import com.yahoo.ycsb.generator.soe.Generator;
 import com.yahoo.ycsb.measurements.Measurements;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.Tracer;
@@ -243,4 +244,17 @@ public class DBWrapper extends DB {
       return res;
     }
   }
+
+  public Status soeLoad(Generator generator) {
+    try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.soeLoad(generator);
+      long en = System.nanoTime();
+      measure("SOE_LOAD", res, ist, st, en);
+      measurements.reportStatus("SOE_LOAD", res);
+      return res;
+    }
+  }
+
 }

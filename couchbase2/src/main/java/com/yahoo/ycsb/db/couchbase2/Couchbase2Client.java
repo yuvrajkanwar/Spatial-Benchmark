@@ -57,6 +57,7 @@ import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 import com.yahoo.ycsb.StringByteIterator;
+import com.yahoo.ycsb.generator.soe.Generator;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
@@ -130,6 +131,7 @@ public class Couchbase2Client extends DB {
   private int runtimeMetricsInterval;
   private String scanAllQuery;
   private int documentExpiry;
+  private Boolean isSOETest;
   
   @Override
   public void init() throws DBException {
@@ -153,6 +155,7 @@ public class Couchbase2Client extends DB {
     networkMetricsInterval = Integer.parseInt(props.getProperty("couchbase.networkMetricsInterval", "0"));
     runtimeMetricsInterval = Integer.parseInt(props.getProperty("couchbase.runtimeMetricsInterval", "0"));
     documentExpiry = Integer.parseInt(props.getProperty("couchbase.documentExpiry", "0"));
+    isSOETest = props.getProperty("couchbase.soe", "false").equals("true");
     scanAllQuery =  "SELECT RAW meta().id FROM `" + bucketName +
       "` WHERE meta().id >= '$1' ORDER BY meta().id LIMIT $2";
 
@@ -240,6 +243,26 @@ public class Couchbase2Client extends DB {
   }
 
   @Override
+  public Status soeLoad(Generator generator) {
+
+    try {
+      String docId = generator.getRandomCustomerId();
+      RawJsonDocument doc = bucket.get(docId, RawJsonDocument.class);
+      if (doc != null) {
+        generator.putCustomerDocument(docId, doc.content().toString());
+      } else {
+        System.err.println("Error getting document from DB: " + docId);
+      }
+
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+    return Status.OK;
+  }
+
+
+  @Override
   public Status read(final String table, final String key, Set<String> fields,
       final HashMap<String, ByteIterator> result) {
     try {
@@ -251,6 +274,7 @@ public class Couchbase2Client extends DB {
       }
     } catch (Exception ex) {
       ex.printStackTrace();
+
       return Status.ERROR;
     }
   }
@@ -380,8 +404,10 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
+
   @Override
   public Status insert(final String table, final String key, final HashMap<String, ByteIterator> values) {
+
     if (upsert) {
       return upsert(table, key, values);
     }
