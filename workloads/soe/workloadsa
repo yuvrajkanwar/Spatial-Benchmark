@@ -28,10 +28,22 @@ workload=com.yahoo.ycsb.workloads.soe.SoeWorkload
 
 readallfields=true
 
-readproportion=0.5
-updateproportion=0.5
+readproportion=0
+updateproportion=0
 scanproportion=0
 insertproportion=0
+soe_insert
+soe_update
+soe_read
+soe_scan
+soe_page
+soe_search
+soe_nestscan
+soe_arrayscan
+soe_arraydeepscan
+soe_report
+soe_report2
+soe_sync
 
 requestdistribution=zipfian
 

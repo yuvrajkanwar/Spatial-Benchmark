@@ -48,6 +48,20 @@ public class DBWrapper extends DB {
   private final String scopeStringRead;
   private final String scopeStringScan;
   private final String scopeStringUpdate;
+  private final String scopeStringSoeInsert;
+  private final String scopeStringSoeUpdate;
+  private final String scopeStringSoeRead;
+  private final String scopeStringSoeScan;
+  private final String scopeStringSoePage;
+  private final String scopeStringSoeSearch;
+  private final String scopeStringSoeNestScan;
+  private final String scopeStringSoeArrayScan;
+  private final String scopeStringSoeArrayDeepScan;
+  private final String scopeStringSoeReport;
+  private final String scopeStringSoeReport2;
+  private final String scopeStringSoeSync;
+
+
 
   public DBWrapper(final DB db, final Tracer tracer) {
     this.db = db;
@@ -61,6 +75,19 @@ public class DBWrapper extends DB {
     scopeStringRead = simple + "#read";
     scopeStringScan = simple + "#scan";
     scopeStringUpdate = simple + "#update";
+    scopeStringSoeInsert = simple + "#soeinser";
+    scopeStringSoeUpdate = simple + "#soeupdate";
+    scopeStringSoeRead = simple + "#soeread";
+    scopeStringSoeScan = simple + "#soescan";
+    scopeStringSoePage = simple + "#soepage";
+    scopeStringSoeSearch = simple + "#soesearch";
+    scopeStringSoeNestScan = simple + "#soenestscan";
+    scopeStringSoeArrayScan = simple + "#soearrayscan";
+    scopeStringSoeArrayDeepScan = simple + "#soedeeparrayscan";
+    scopeStringSoeReport = simple + "#soereport";
+    scopeStringSoeReport2 = simple + "#soereport2";
+    scopeStringSoeSync = simple + "#soesync";
+
   }
 
   /**
@@ -253,6 +280,162 @@ public class DBWrapper extends DB {
       long en = System.nanoTime();
       measure("SOE_LOAD", res, ist, st, en);
       measurements.reportStatus("SOE_LOAD", res);
+      return res;
+    }
+  }
+
+  public Status soeInsert(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_INSERT", res, ist, st, en);
+      measurements.reportStatus("SOE_INSERT", res);
+      return res;
+    }
+  }
+
+  public Status soeUpdate(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_UPDATE", res, ist, st, en);
+      measurements.reportStatus("SOE_UPDATE", res);
+      return res;
+    }
+  }
+
+  public Status soeRead(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_READ", res, ist, st, en);
+      measurements.reportStatus("SOE_READ", res);
+      return res;
+    }
+  }
+
+  public Status soeScan(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_SCAN", res, ist, st, en);
+      measurements.reportStatus("SOE_SCAN", res);
+      return res;
+    }
+  }
+
+  public Status soePage(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_PAGE", res, ist, st, en);
+      measurements.reportStatus("SOE_PAGE", res);
+      return res;
+    }
+  }
+
+  public Status soeSearch(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_SEARCH", res, ist, st, en);
+      measurements.reportStatus("SOE_SEARCH", res);
+      return res;
+    }
+  }
+
+  public Status soeNestScan(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_NESTSCAN", res, ist, st, en);
+      measurements.reportStatus("SOE_NESTSCAN", res);
+      return res;
+    }
+  }
+
+  public Status soeArrayScan(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_ARRAYSCAN", res, ist, st, en);
+      measurements.reportStatus("SOE_ARRAYSCAN", res);
+      return res;
+    }
+  }
+
+  public Status soeArrayDeepScan(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_ARRAYDEEPSCAN", res, ist, st, en);
+      measurements.reportStatus("SOE_ARRAYDEEPSCAN", res);
+      return res;
+    }
+  }
+
+  public Status soeReport(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_REPORT", res, ist, st, en);
+      measurements.reportStatus("SOE_REPORT", res);
+      return res;
+    }
+  }
+
+  public Status soeReport2(String table, String key, Set<String> fields,
+                     HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_REPORT2", res, ist, st, en);
+      measurements.reportStatus("SOE_REPORT2", res);
+      return res;
+    }
+  }
+
+  public Status soeSync(String table, String key, Set<String> fields,
+                           HashMap<String, ByteIterator> result) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.read(table, key, fields, result);
+      long en = System.nanoTime();
+      measure("SOE_SYNC", res, ist, st, en);
+      measurements.reportStatus("SOE_SYNC", res);
       return res;
     }
   }
