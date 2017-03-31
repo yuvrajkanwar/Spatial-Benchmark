@@ -97,7 +97,7 @@ public abstract class Generator {
 
   protected abstract int increment(String key, int step);
 
-  public void putCustomerDocument(String docKey, String docBody) {
+  public void putCustomerDocument(String docKey, String docBody) throws Exception {
     ArrayList<Pair<String, String>> tokens = tokenize(docBody);
     String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
     int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT, 1);
@@ -109,7 +109,42 @@ public abstract class Generator {
       String key = prefix + token.getKey() + SOE_SYSTEMFIELD_DELIMITER + storageCount;
       setVal(key, token.getValue());
     }
-/*
+
+    // making sure all fields are initialized
+    Field[] fields = Generator.class.getDeclaredFields();
+    for (Field f: fields) {
+      if (f.getName().startsWith("SOE_FIELD_CUSTOMER")) {
+        String entryKey = prefix + f.get((Object) this) + SOE_SYSTEMFIELD_DELIMITER + storageCount;
+        if (getVal(entryKey) == null) {
+          if (storageCount > 1) {
+            for(int i = storageCount-1; i > 0; i--) {
+              String entryKeyPrev = prefix + f.get((Object) this) + SOE_SYSTEMFIELD_DELIMITER + i;
+              String v = getVal(entryKeyPrev);
+              if (v != null) {
+                setVal(entryKey, v);
+              }
+            }
+          }
+        }
+        String firstValidValue = "";
+        for (int i = 0; i < storageCount; i++) {
+          entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
+          firstValidValue = getVal(entryKey);
+          if (firstValidValue != null) {
+            for (int j = 0; j < i; j++) {
+              entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + j;
+              setVal(entryKey, firstValidValue);
+            }
+            break;
+          }
+        }
+
+      }
+    }
+
+
+
+    /*
     // making sure all fields are initialized
     Field[] fields = Generator.class.getDeclaredFields();
     for (Field f: fields) {
@@ -148,50 +183,7 @@ public abstract class Generator {
           setVal(entryKey, firstValidValue);
         }
       }
-    }
-    */
-
-    /*
-    Field[] fields = Generator.class.getDeclaredFields();
-    int validValueCursor = 0;
-    for (Field f: fields) {
-      if (f.getName().startsWith("SOE_FIELD_CUSTOMER")) {
-        for (int i = 1; i< storageCount; i++) {
-          String entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-          try {
-            getVal(entryKey);
-            validValueCursor = i;
-          } catch (Exception e) {
-            try {
-              int prev = i-1;
-              String entryKeyPrev = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + prev;
-              String v = getVal(entryKeyPrev);
-              setVal(entryKey, v);
-              validValueCursor = i;
-            } catch (Exception e1) {
-              continue;
-            }
-          }
-        }
-        for (int i = validValueCursor; i > 1; i--) {
-          String entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-          try {
-            getVal(entryKey);
-          } catch (Exception e) {
-            try {
-              int next = i+1;
-              String entryKeyNext = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + next;
-              String v = getVal(entryKeyNext);
-              setVal(entryKey, v);
-            } catch (Exception e1) {
-              continue;
-            }
-          }
-        }
-      }
-    }
-    */
-
+    } */
   }
 
   public Pair<String, String> getInserDocument() {
@@ -210,7 +202,8 @@ public abstract class Generator {
 
   public void buildInsertDocument() {
     String docBody = getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC));
-    int docCounter = increment(SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
+    String keyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
+    int docCounter = increment(keyPrefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
     String docKey = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + docCounter;
     insertDocument = new Pair<String, String>(docKey, docBody);
   }

@@ -24,8 +24,9 @@ public class SoeWorkload extends CoreWorkload {
   public static final String STORAGE_HOST_DEFAULT = "localhost";
   public static final String STORAGE_PORT = "soe_storage_port";
   public static final String STORAGE_PORT_DEFAULT = "8000";
-  public static final String TOTAL_DOCS = "soe_total_docs";
-  public static final String TOTAL_DOCS_DEFAULT = "1000000";
+  public static final String TOTAL_DOCS = "totalrecordcount";
+  public static final String TOTAL_DOCS_DEFAULT = "";
+
 
 
 
@@ -68,7 +69,6 @@ public class SoeWorkload extends CoreWorkload {
 
   @Override
   public Object initThread(Properties p, int mythreadid, int threadcount) throws WorkloadException {
-
     String memHost = p.getProperty(STORAGE_HOST, STORAGE_HOST_DEFAULT);
     String memPort = p.getProperty(STORAGE_PORT, STORAGE_PORT_DEFAULT);
     String totalDocs = p.getProperty(TOTAL_DOCS, TOTAL_DOCS_DEFAULT);
@@ -324,7 +324,7 @@ public class SoeWorkload extends CoreWorkload {
     final double soeArraydeepscan = Double.parseDouble(
         p.getProperty(SOE_ARRAYDEEPSCAN_PROPORTION_PROPERTY, SOE_ARRAYDEEPSCAN_PROPORTION_PROPERTY_DEFAULT));
     final double soeReport = Double.parseDouble(
-        p.getProperty(SOE_READ_PROPORTION_PROPERTY, SOE_READ_PROPORTION_PROPERTY_DEFAULT));
+        p.getProperty(SOE_REPORT_PROPORTION_PROPERTY, SOE_REPORT_PROPORTION_PROPERTY_DEFAULT));
     final double soeReport2 = Double.parseDouble(
         p.getProperty(SOE_REPORT2_PROPORTION_PROPERTY, SOE_REPORT2_PROPORTION_PROPERTY_DEFAULT));
     final double soeSync = Double.parseDouble(

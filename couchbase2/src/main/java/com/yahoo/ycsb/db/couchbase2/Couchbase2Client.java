@@ -70,6 +70,7 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import javafx.util.Pair;
 
 /**
  * A class that wraps the 2.x Couchbase SDK to be used with YCSB.
@@ -242,6 +243,11 @@ public class Couchbase2Client extends DB {
     LOGGER.info("===> Using Params: " + sb.toString());
   }
 
+    /*
+    SOE operations.
+   */
+
+
   @Override
   public Status soeLoad(Generator generator) {
 
@@ -260,6 +266,69 @@ public class Couchbase2Client extends DB {
     }
     return Status.OK;
   }
+
+
+
+  @Override
+  public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+
+    try {
+      Pair<String, String> inserDocPair = gen.getInserDocument();
+      if (kv) {
+        return soeInsertKv(inserDocPair.getKey(), inserDocPair.getValue());
+      } else {
+        return soeInsertN1ql(inserDocPair.getKey(), inserDocPair.getValue());
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+
+
+  private Status soeInsertKv(final String docId, final String docBody) {
+    int tries = 60; // roughly 60 seconds with the 1 second sleep, not 100% accurate.
+    for(int i = 0; i < tries; i++) {
+      try {
+        waitForMutationResponse(bucket.async().insert(
+            RawJsonDocument.create(docId, documentExpiry, docBody),
+            persistTo,
+            replicateTo
+        ));
+        return Status.OK;
+      } catch (TemporaryFailureException ex) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          throw new RuntimeException("Interrupted while sleeping on TMPFAIL backoff.", ex);
+        }
+      }
+    }
+    throw new RuntimeException("Still receiving TMPFAIL from the server after trying " + tries + " times. " +
+        "Check your server.");
+  }
+
+
+  private Status soeInsertN1ql(final String docId, final String docBody)
+      throws Exception {
+    String insertQuery = "INSERT INTO `" + bucketName + "`(KEY,VALUE) VALUES ($1,$2)";
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        insertQuery,
+        JsonArray.from(docId, docBody),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new DBException("Error while parsing N1QL Result. Query: " + insertQuery
+          + ", Errors: " + queryResult.errors());
+    }
+    return Status.OK;
+  }
+
+
+
 
 
   @Override
@@ -963,4 +1032,5 @@ class BackoffSelectStrategy implements SelectStrategy {
 
     return SelectStrategy.CONTINUE;
   }
+
 }

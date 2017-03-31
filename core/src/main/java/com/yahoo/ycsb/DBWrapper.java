@@ -291,8 +291,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeInsert(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildInsertDocument();
       long ist = measurements.getIntendedtartTimeNs();
@@ -305,8 +304,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeUpdate(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeUpdate(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildUpdatePredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -319,8 +317,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeRead(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeRead(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildReadPredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -333,8 +330,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeScan(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -347,8 +343,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soePage(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soePage(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildPagePredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -361,8 +356,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeSearch(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeSearch(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildSearchPredicatesSequenceN3();
       long ist = measurements.getIntendedtartTimeNs();
@@ -375,8 +369,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeNestScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeNestScan(String table, HashMap<String, ByteIterator> result, Generator generator){
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildNestedScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -389,8 +382,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeArrayScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeArrayScan(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildArrayScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -403,8 +395,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeArrayDeepScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeArrayDeepScan(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildArrayDeepScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -417,8 +408,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeReport(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeReport(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildReport1Predicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -431,8 +421,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeReport2(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeReport2(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildReport2Predicate();
       long ist = measurements.getIntendedtartTimeNs();
@@ -445,8 +434,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeSync(String table, String key, Set<String> fields,
-                           HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeSync(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildSyncPredicate();
       long ist = measurements.getIntendedtartTimeNs();

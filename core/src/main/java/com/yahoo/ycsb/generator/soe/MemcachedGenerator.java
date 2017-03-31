@@ -24,8 +24,8 @@ public class MemcachedGenerator extends Generator {
 
   public MemcachedGenerator(String memHost, String memPort, String totalDocs) throws Exception {
     try {
-      String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
       client = createMemcachedClient(memHost, Integer.parseInt(memPort));
+      String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
 
       if (client.get(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT) == null){
         client.add(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT, 0, totalDocs);
