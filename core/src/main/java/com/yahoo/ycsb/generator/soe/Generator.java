@@ -6,6 +6,7 @@ import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 import java.lang.reflect.*;
 import org.json.*;
@@ -97,93 +98,53 @@ public abstract class Generator {
 
   protected abstract int increment(String key, int step);
 
+  private boolean allValuesInitialized = false;
+
   public void putCustomerDocument(String docKey, String docBody) throws Exception {
-    ArrayList<Pair<String, String>> tokens = tokenize(docBody);
+    HashMap<String, String> tokens = tokenize(docBody);
     String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
-    int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT, 1);
+    int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT, 1) - 1;
 
     setVal(prefix + SOE_METAFIELD_DOCID + SOE_SYSTEMFIELD_DELIMITER + storageCount, docKey);
     setVal(prefix + SOE_METAFIELD_INSERTDOC + SOE_SYSTEMFIELD_DELIMITER + storageCount, docBody);
 
-    for (Pair<String, String> token : tokens) {
-      String key = prefix + token.getKey() + SOE_SYSTEMFIELD_DELIMITER + storageCount;
-      setVal(key, token.getValue());
-    }
-
-    // making sure all fields are initialized
-    Field[] fields = Generator.class.getDeclaredFields();
-    for (Field f: fields) {
-      if (f.getName().startsWith("SOE_FIELD_CUSTOMER")) {
-        String entryKey = prefix + f.get((Object) this) + SOE_SYSTEMFIELD_DELIMITER + storageCount;
-        if (getVal(entryKey) == null) {
-          if (storageCount > 1) {
-            for(int i = storageCount-1; i > 0; i--) {
-              String entryKeyPrev = prefix + f.get((Object) this) + SOE_SYSTEMFIELD_DELIMITER + i;
-              String v = getVal(entryKeyPrev);
-              if (v != null) {
-                setVal(entryKey, v);
-              }
-            }
-          }
-        }
-        String firstValidValue = "";
-        for (int i = 0; i < storageCount; i++) {
-          entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-          firstValidValue = getVal(entryKey);
-          if (firstValidValue != null) {
-            for (int j = 0; j < i; j++) {
-              entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + j;
-              setVal(entryKey, firstValidValue);
-            }
+    for (String key : tokens.keySet()){
+      String storageKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + storageCount;
+      String value = tokens.get(key);
+      if (value != null) {
+        setVal(storageKey, value);
+      }  else {
+        for (int i = (storageCount-1); i>0; i--) {
+          String prevKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + i;
+          String prevVal = getVal(prevKey);
+          if (prevVal != null) {
+            setVal(storageKey, prevVal);
             break;
           }
         }
-
       }
     }
 
-
-
-    /*
-    // making sure all fields are initialized
-    Field[] fields = Generator.class.getDeclaredFields();
-    for (Field f: fields) {
-      if (f.getName().startsWith("SOE_FIELD_CUSTOMER")) {
-        String entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + storageCount;
-        try {
-          getVal(entryKey);
-        } catch (Exception e) {
-          if (storageCount > 1) {
-            for(int i = storageCount-1; i > 0; i--) {
-              try {
-                String entryKeyPrev = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-                String v = getVal(entryKeyPrev);
-                setVal(entryKey, v);
-                break;
-              } catch (Exception ex) {
-                continue;
-              }
+    //make sure all values are initialized
+    if ((!allValuesInitialized) && (storageCount > 1)) {
+      boolean nullDetected = false;
+      for (String key : tokens.keySet()) {
+        for (int i = 0; i< storageCount; i++) {
+          String storageKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + i;
+          String storageValue = getVal(storageKey);
+          if (storageValue != null) {
+            for (int j = i; j>=0; j--) {
+              storageKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + j;
+              setVal(storageKey, storageValue);
             }
-          }
-        }
-        int firstValidValueCursor = 0;
-        String firstValidValue = "";
-        for (int i = 1; i < storageCount; i++) {
-          entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-          try {
-            firstValidValue = getVal(entryKey);
-            firstValidValueCursor = i;
             break;
-          } catch (Exception ex) {
-            continue;
+          } else {
+            nullDetected = true;
           }
-        }
-        for (int i = 1; i < firstValidValueCursor; i++) {
-          entryKey = prefix + f.getName() + SOE_SYSTEMFIELD_DELIMITER + i;
-          setVal(entryKey, firstValidValue);
         }
       }
-    } */
+      allValuesInitialized = !nullDetected;
+    }
   }
 
   public Pair<String, String> getInserDocument() {
@@ -361,8 +322,8 @@ public abstract class Generator {
   }
 
 
-  private ArrayList<Pair<String, String>> tokenize(String jsonString) {
-    ArrayList<Pair<String, String>> tokens = new ArrayList<>();
+  private HashMap<String, String> tokenize(String jsonString) {
+    HashMap<String, String> tokens = new HashMap<String, String>();
     JSONObject obj = new JSONObject(jsonString);
 
     try {
@@ -390,7 +351,9 @@ public abstract class Generator {
   }
 
 
-  private void tokenizeFields(JSONObject obj, ArrayList<Pair<String, String>> tokens) {
+  private void tokenizeFields(JSONObject obj, HashMap<String, String> tokens) {
+
+
 
     //string
     ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(SOE_FIELD_CUSTOMER_ID,
@@ -398,44 +361,51 @@ public abstract class Generator {
         SOE_FIELD_CUSTOMER_BALLANCE, SOE_FIELD_CUSTOMER_DOB, SOE_FIELD_CUSTOMER_EMAIL, SOE_FIELD_CUSTOMER_PHONECOUNTRY,
         SOE_FIELD_CUSTOMER_PHONE, SOE_FIELD_CUSTOMER_AGEGROUP, SOE_FIELD_CUSTOMER_URLPROTOCOL,
         SOE_FIELD_CUSTOMER_URLSITE, SOE_FIELD_CUSTOMER_URLDOMAIN, SOE_FIELD_CUSTOMER_URL));
+
     for (String field : stringFields) {
+      tokens.put(field, null);
       if (obj.has(field) && !obj.isNull(field)) {
-        tokens.add(new Pair<String, String>(field, obj.getString(field)));
+        tokens.put(field, obj.getString(field));
       }
     }
 
     //integer
     ArrayList<String> intFields = new ArrayList<>(Arrays.asList(SOE_FIELD_CUSTOMER_DOCID,
         SOE_FIELD_CUSTOMER_LINEARSCORE, SOE_FIELD_CUSTOMER_WEIGHTEDSCORE, SOE_FIELD_CUSTOMER_AGE));
+
     for (String field : intFields) {
+      tokens.put(field, null);
       if (obj.has(field) && !obj.isNull(field)) {
-        tokens.add(new Pair<String, String>(field, String.valueOf(obj.getInt(field))));
+        tokens.put(field, String.valueOf(obj.getInt(field)));
       }
     }
 
     //boolean
     String field = SOE_FIELD_CUSTOMER_ISACTIVE;
+    tokens.put(field, null);
     if (obj.has(field) && !obj.isNull(field)) {
-      tokens.add(new Pair<String, String>(field, String.valueOf(obj.getBoolean(field))));
+      tokens.put(field, String.valueOf(obj.getBoolean(field)));
     }
 
 
   }
 
-  private void tokenizeArrays(JSONObject obj, ArrayList<Pair<String, String>> tokens) {
+  private void tokenizeArrays(JSONObject obj, HashMap<String, String>  tokens) {
 
     //array
     String field = SOE_FIELD_CUSTOMER_DEVICES;
+    tokens.put(field, null);
     if (obj.has(field) && !obj.isNull(field)) {
       JSONArray arr = obj.getJSONArray(field);
       if (arr.length() > 0) {
         int element = rand.nextInt(arr.length());
-        tokens.add(new Pair<String, String>(field, arr.getString(element)));
+        tokens.put(field, arr.getString(element));
       }
     }
 
     //array of arrays
     field = SOE_FIELD_CUSTOMER_LINKEDDEVICES;
+    tokens.put(field, null);
     if (obj.has(field) && !obj.isNull(field)) {
       JSONArray arr = obj.getJSONArray(field);
       if (arr.length() > 0) {
@@ -443,13 +413,17 @@ public abstract class Generator {
         JSONArray inarr = arr.getJSONArray(element);
         if (inarr.length() > 0) {
           int inelement = rand.nextInt(inarr.length());
-          tokens.add(new Pair<String, String>(field, inarr.getString(inelement)));
+          tokens.put(field, inarr.getString(inelement));
         }
       }
     }
 
     //array of objects
     field = SOE_FIELD_CUSTOMER_CHILDREN;
+    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_GENDER, null);
+    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_FNAME, null);
+    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_AGE, null);
+
     if (obj.has(field) && !obj.isNull(field)) {
       JSONArray inarr = obj.getJSONArray(field);
       if (inarr.length() > 0) {
@@ -461,19 +435,22 @@ public abstract class Generator {
         for (String infield : inobjStringFields) {
           if (inobj.has(infield) && !inobj.isNull(infield)) {
             String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-            tokens.add(new Pair<String, String>(key, inobj.getString(infield)));
+            tokens.put(key, inobj.getString(infield));
           }
         }
         String infield = SOE_FIELD_CUSTOMER_CHILDREN_OBJ_AGE;
         if (inobj.has(infield) && !inobj.isNull(infield)) {
           String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-          tokens.add(new Pair<String, String>(key, String.valueOf(inobj.getInt(infield))));
+          tokens.put(key, String.valueOf(inobj.getInt(infield)));
         }
       }
     }
 
     //array of objects with array
     field = SOE_FIELD_CUSTOMER_VISITEDPLACES;
+    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY, null);
+    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES, null);
+
     if (obj.has(field) && !obj.isNull(field)) {
       JSONArray inarr = obj.getJSONArray(field);
       if (inarr.length()>0) {
@@ -482,7 +459,7 @@ public abstract class Generator {
         String infield = SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY;
         if (inobj.has(infield) && !inobj.isNull(infield)) {
           String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-          tokens.add(new Pair<String, String>(key, inobj.getString(infield)));
+          tokens.put(key, inobj.getString(infield));
         }
         infield = SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES;
         if (inobj.has(infield) && !inobj.isNull(infield)) {
@@ -490,17 +467,37 @@ public abstract class Generator {
           if (inarr2.length() >0) {
             int inelement2 = rand.nextInt(inarr2.length());
             String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-            tokens.add(new Pair<String, String>(key, inarr2.getString(inelement2)));
+            tokens.put(key, inarr2.getString(inelement2));
           }
         }
       }
     }
   }
 
-  private void tokenizeObjects(JSONObject obj, ArrayList<Pair<String, String>> tokens) {
+  private void tokenizeObjects(JSONObject obj, HashMap<String, String>  tokens) {
 
     //3-level nested objects
     String field = SOE_FIELD_CUSTOMER_ADDRESS;
+
+    String l1Prefix = field + SOE_SYSTEMFIELD_DELIMITER;
+    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_CITY, null);
+    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP, null);
+    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY, null);
+    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_STREET, null);
+
+    String l2Prefix = l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR + SOE_SYSTEMFIELD_DELIMITER;
+    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CITY, null);
+    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_ZIP, null);
+    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_STREET, null);
+    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_COUNTRY, null);
+
+    String l3Prefix = l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER + SOE_SYSTEMFIELD_DELIMITER;
+    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_FNAME, null);
+    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_LNAME, null);
+    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_MNAME, null);
+    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_PHONE, null);
+
+
     if (obj.has(field) && !obj.isNull(field)) {
       JSONObject inobj = obj.getJSONObject(field);
 
@@ -513,7 +510,7 @@ public abstract class Generator {
       for (String infield : inobjStringFields) {
         if (inobj.has(infield) && !inobj.isNull(infield)) {
           String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-          tokens.add(new Pair<String, String>(key, inobj.getString(infield)));
+          tokens.put(key, inobj.getString(infield));
         }
       }
 
@@ -530,7 +527,7 @@ public abstract class Generator {
         for (String infield2 : inobj2StringFields) {
           if (inobj2.has(infield2) && !inobj2.isNull(infield2)) {
             String key = field + SOE_SYSTEMFIELD_DELIMITER + infield + SOE_SYSTEMFIELD_DELIMITER + infield2;
-            tokens.add(new Pair<String, String>(key, inobj2.getString(infield2)));
+            tokens.put(key, inobj2.getString(infield2));
           }
         }
 
@@ -547,7 +544,7 @@ public abstract class Generator {
             if (inobj3.has(infield3) && !inobj3.isNull(infield3)) {
               String key = field + SOE_SYSTEMFIELD_DELIMITER +
                   infield + SOE_SYSTEMFIELD_DELIMITER + infield2 + SOE_SYSTEMFIELD_DELIMITER + infield3;
-              tokens.add(new Pair<String, String>(key, inobj3.getString(infield3)));
+              tokens.put(key, inobj3.getString(infield3));
             }
           }
         }
