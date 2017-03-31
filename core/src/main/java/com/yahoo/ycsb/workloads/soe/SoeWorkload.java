@@ -10,7 +10,6 @@ import com.yahoo.ycsb.generator.soe.MemcachedGenerator;
 import com.yahoo.ycsb.WorkloadException;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Properties;
 
 /**
@@ -18,6 +17,7 @@ import java.util.Properties;
  */
 public class SoeWorkload extends CoreWorkload {
 
+  protected DiscreteGenerator operationchooser;
 
 
   public static final String STORAGE_HOST = "soe_storage_host";
@@ -103,57 +103,56 @@ public class SoeWorkload extends CoreWorkload {
     if(operation == null) {
       return false;
     }
-
     MemcachedGenerator  generator = (MemcachedGenerator) threadstate;
 
     switch (operation) {
-      case "READ":
-        doTransactionRead(db);
-        break;
-      case "UPDATE":
-        doTransactionUpdate(db);
-        break;
-      case "INSERT":
-        doTransactionInsert(db);
-        break;
-      case "SOE_INSERT":
-        doTransactionSoeInsert(db, generator);
-        break;
-      case "SOE_UPDATE":
-        doTransactionSoeUpdate(db, generator);
-        break;
-      case "SOE_READ":
-        doTransactionSoeRead(db, generator);
-        break;
-      case "SOE_SCAN":
-        doTransactionSoeScan(db, generator);
-        break;
-      case "SOE_PAGE":
-        doTransactionSoePage(db, generator);
-        break;
-      case "SOE_SEARCH":
-        doTransactionSoeSearch(db, generator);
-        break;
-      case "SOE_NESTSCAN":
-        doTransactionSoeNestScan(db, generator);
-        break;
-      case "SOE_ARRAYSCAN":
-        doTransactionSoeArrayScan(db, generator);
-        break;
-      case "SOE_ARRAYDEEPSCAN":
-        doTransactionSoeArrayDeepScan(db, generator);
-        break;
-      case "SOE_REPORT":
-        doTransactionSoeReport(db, generator);
-        break;
-      case "SOE_REPORT2":
-        doTransactionSoeReport2(db, generator);
-        break;
-      case "SOE_SYNC":
-        doTransactionSoeSync(db, generator);
-        break;
-      default:
-        doTransactionReadModifyWrite(db);
+    case "READ":
+      doTransactionRead(db);
+      break;
+    case "UPDATE":
+      doTransactionUpdate(db);
+      break;
+    case "INSERT":
+      doTransactionInsert(db);
+      break;
+    case "SOE_INSERT":
+      doTransactionSoeInsert(db, generator);
+      break;
+    case "SOE_UPDATE":
+      doTransactionSoeUpdate(db, generator);
+      break;
+    case "SOE_READ":
+      doTransactionSoeRead(db, generator);
+      break;
+    case "SOE_SCAN":
+      doTransactionSoeScan(db, generator);
+      break;
+    case "SOE_PAGE":
+      doTransactionSoePage(db, generator);
+      break;
+    case "SOE_SEARCH":
+      doTransactionSoeSearch(db, generator);
+      break;
+    case "SOE_NESTSCAN":
+      doTransactionSoeNestScan(db, generator);
+      break;
+    case "SOE_ARRAYSCAN":
+      doTransactionSoeArrayScan(db, generator);
+      break;
+    case "SOE_ARRAYDEEPSCAN":
+      doTransactionSoeArrayDeepScan(db, generator);
+      break;
+    case "SOE_REPORT":
+      doTransactionSoeReport(db, generator);
+      break;
+    case "SOE_REPORT2":
+      doTransactionSoeReport2(db, generator);
+      break;
+    case "SOE_SYNC":
+      doTransactionSoeSync(db, generator);
+      break;
+    default:
+      doTransactionReadModifyWrite(db);
     }
 
     return true;
@@ -305,6 +304,32 @@ public class SoeWorkload extends CoreWorkload {
     final double readmodifywriteproportion = Double.parseDouble(p.getProperty(
         READMODIFYWRITE_PROPORTION_PROPERTY, READMODIFYWRITE_PROPORTION_PROPERTY_DEFAULT));
 
+
+    final double soeInsert = Double.parseDouble(
+        p.getProperty(SOE_INSERT_PROPORTION_PROPERTY, SOE_INSERT_PROPORTION_PROPERTY_DEFAULT));
+    final double soeUpdate = Double.parseDouble(
+        p.getProperty(SOE_UPDATE_PROPORTION_PROPERTY, SOE_UPDATE_PROPORTION_PROPERTY_DEFAULT));
+    final double soeRead = Double.parseDouble(
+        p.getProperty(SOE_READ_PROPORTION_PROPERTY, SOE_READ_PROPORTION_PROPERTY_DEFAULT));
+    final double soeScan = Double.parseDouble(
+        p.getProperty(SOE_SCAN_PROPORTION_PROPERTY, SOE_SCAN_PROPORTION_PROPERTY_DEFAULT));
+    final double soePage = Double.parseDouble(
+        p.getProperty(SOE_PAGE_PROPORTION_PROPERTY, SOE_PAGE_PROPORTION_PROPERTY_DEFAULT));
+    final double soeSearch = Double.parseDouble(
+        p.getProperty(SOE_SEARCH_PROPORTION_PROPERTY, SOE_SEARCH_PROPORTION_PROPERTY_DEFAULT));
+    final double soeNetscan = Double.parseDouble(
+        p.getProperty(SOE_NESTSCAN_PROPORTION_PROPERTY, SOE_NESTSCAN_PROPORTION_PROPERTY_DEFAULT));
+    final double soeArrayscan = Double.parseDouble(
+        p.getProperty(SOE_ARRAYSCAN_PROPORTION_PROPERTY, SOE_ARRAYSCAN_PROPORTION_PROPERTY_DEFAULT));
+    final double soeArraydeepscan = Double.parseDouble(
+        p.getProperty(SOE_ARRAYDEEPSCAN_PROPORTION_PROPERTY, SOE_ARRAYDEEPSCAN_PROPORTION_PROPERTY_DEFAULT));
+    final double soeReport = Double.parseDouble(
+        p.getProperty(SOE_READ_PROPORTION_PROPERTY, SOE_READ_PROPORTION_PROPERTY_DEFAULT));
+    final double soeReport2 = Double.parseDouble(
+        p.getProperty(SOE_REPORT2_PROPORTION_PROPERTY, SOE_REPORT2_PROPORTION_PROPERTY_DEFAULT));
+    final double soeSync = Double.parseDouble(
+        p.getProperty(SOE_SYNC_PROPORTION_PROPERTY, SOE_SYNC_PROPORTION_PROPERTY_DEFAULT));
+
     final DiscreteGenerator operationchooser = new DiscreteGenerator();
     if (readproportion > 0) {
       operationchooser.addValue(readproportion, "READ");
@@ -326,52 +351,52 @@ public class SoeWorkload extends CoreWorkload {
       operationchooser.addValue(readmodifywriteproportion, "READMODIFYWRITE");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_INSERT");
+    if (soeInsert > 0) {
+      operationchooser.addValue(soeInsert, "SOE_INSERT");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_UPDATE");
+    if (soeUpdate > 0) {
+      operationchooser.addValue(soeUpdate, "SOE_UPDATE");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_READ");
+    if (soeRead > 0) {
+      operationchooser.addValue(soeRead, "SOE_READ");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_SCAN");
+    if (soeScan > 0) {
+      operationchooser.addValue(soeScan, "SOE_SCAN");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_PAGE");
+    if (soePage > 0) {
+      operationchooser.addValue(soePage, "SOE_PAGE");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_SEARCH");
+    if (soeSearch > 0) {
+      operationchooser.addValue(soeSearch, "SOE_SEARCH");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_NESTSCAN");
+    if (soeNetscan > 0) {
+      operationchooser.addValue(soeNetscan, "SOE_NESTSCAN");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_ARRAYSCAN");
+    if (soeArrayscan > 0) {
+      operationchooser.addValue(soeArrayscan, "SOE_ARRAYSCAN");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_ARRAYDEEPSCAN");
+    if (soeArraydeepscan > 0) {
+      operationchooser.addValue(soeArraydeepscan, "SOE_ARRAYDEEPSCAN");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_REPORT");
+    if (soeReport > 0) {
+      operationchooser.addValue(soeReport, "SOE_REPORT");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_REPORT2");
+    if (soeReport2 > 0) {
+      operationchooser.addValue(soeReport2, "SOE_REPORT2");
     }
 
-    if (readmodifywriteproportion > 0) {
-      operationchooser.addValue(readmodifywriteproportion, "SOE_SYNC");
+    if (soeSync > 0) {
+      operationchooser.addValue(soeSync, "SOE_SYNC");
     }
 
 

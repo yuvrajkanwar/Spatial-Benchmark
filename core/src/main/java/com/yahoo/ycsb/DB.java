@@ -148,62 +148,62 @@ public abstract class DB {
     return null;
   }
 
-  public Status soeInsert(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeInsert not implemented");
     return null;
   }
 
-  public Status soeUpdate(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeUpdate(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeUpdate not implemented");
     return null;
   }
 
-  public Status soeRead(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeRead(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeRead not implemented");
     return null;
   }
 
-  public Status soeScan(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeScan(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeScan not implemented");
     return null;
   }
 
-  public Status soePage(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soePage(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soePage not implemented");
     return null;
   }
 
-  public Status soeSearch(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeSearch(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeSearch not implemented");
     return null;
   }
 
-  public Status soeNestScan(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeNestScan(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeNestScan not implemented");
     return null;
   }
 
-  public Status soeArrayScan(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeArrayScan(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeArrayScan not implemented");
     return null;
   }
 
-  public Status soeArrayDeepScan(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeArrayDeepScan(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeArrayDeepScan not implemented");
     return null;
   }
 
-  public Status soeReport(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeReport(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeReport not implemented");
     return null;
   }
 
-  public Status soeReport2(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeReport2(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeReport2 not implemented");
     return null;
   }
 
-  public Status soeSync(String table,  HashMap<String,ByteIterator> result, Generator gen)  {
+  public Status soeSync(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeSync not implemented");
     return null;
   }
