@@ -272,6 +272,13 @@ public class DBWrapper extends DB {
     }
   }
 
+  /**
+   * SOE operations.
+   *
+   * @param generator
+   * @return
+   */
+
   public Status soeLoad(Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
       long ist = measurements.getIntendedtartTimeNs();
@@ -285,11 +292,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeInsert(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildInsertDocument();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeInsert(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_INSERT", res, ist, st, en);
       measurements.reportStatus("SOE_INSERT", res);
@@ -298,11 +306,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeUpdate(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildUpdatePredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeUpdate(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_UPDATE", res, ist, st, en);
       measurements.reportStatus("SOE_UPDATE", res);
@@ -311,11 +320,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeRead(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildReadPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeRead(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_READ", res, ist, st, en);
       measurements.reportStatus("SOE_READ", res);
@@ -324,11 +334,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeScan(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_SCAN", res, ist, st, en);
       measurements.reportStatus("SOE_SCAN", res);
@@ -337,11 +348,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soePage(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildPagePredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soePage(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_PAGE", res, ist, st, en);
       measurements.reportStatus("SOE_PAGE", res);
@@ -350,11 +362,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeSearch(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildSearchPredicatesSequenceN3();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeSearch(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_SEARCH", res, ist, st, en);
       measurements.reportStatus("SOE_SEARCH", res);
@@ -363,11 +376,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeNestScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildNestedScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeNestScan(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_NESTSCAN", res, ist, st, en);
       measurements.reportStatus("SOE_NESTSCAN", res);
@@ -376,11 +390,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeArrayScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildArrayScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeArrayScan(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_ARRAYSCAN", res, ist, st, en);
       measurements.reportStatus("SOE_ARRAYSCAN", res);
@@ -389,11 +404,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeArrayDeepScan(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildArrayDeepScanPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeArrayDeepScan(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_ARRAYDEEPSCAN", res, ist, st, en);
       measurements.reportStatus("SOE_ARRAYDEEPSCAN", res);
@@ -402,11 +418,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeReport(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildReport1Predicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeReport(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_REPORT", res, ist, st, en);
       measurements.reportStatus("SOE_REPORT", res);
@@ -415,11 +432,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeReport2(String table, String key, Set<String> fields,
-                     HashMap<String, ByteIterator> result) {
+                     HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildReport2Predicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeReport2(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_REPORT2", res, ist, st, en);
       measurements.reportStatus("SOE_REPORT2", res);
@@ -428,11 +446,12 @@ public class DBWrapper extends DB {
   }
 
   public Status soeSync(String table, String key, Set<String> fields,
-                           HashMap<String, ByteIterator> result) {
+                           HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildSyncPredicate();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.read(table, key, fields, result);
+      Status res = db.soeSync(table, result, generator);
       long en = System.nanoTime();
       measure("SOE_SYNC", res, ist, st, en);
       measurements.reportStatus("SOE_SYNC", res);

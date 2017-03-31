@@ -290,14 +290,14 @@ public abstract class Generator {
   }
 
 
-  public void buildArrayScan1Predicate() {
+  public void buildArrayScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_DEVICES);
     predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_DEVICES)));
   }
 
 
-  public void buildArrayScan2Predicate() {
+  public void buildArrayDeepScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES);
     predicate.setNestedPredicateA(new SoeQueryPredicate());
@@ -317,6 +317,11 @@ public abstract class Generator {
 
 
   public void buildReport2Predicate() {
+    // todo
+  }
+
+
+  public void buildSyncPredicate() {
     // todo
   }
 
