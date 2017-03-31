@@ -32,8 +32,8 @@ public class MemcachedGenerator extends Generator {
       }
 
       if (client.get(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER) == null) {
-        client.add(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 0, totalDocs);
-        client.incr(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
+        client.add(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 0,
+            String.valueOf(Integer.parseInt(totalDocs) + 1));
       }
 
       if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT) == null) {
@@ -53,11 +53,7 @@ public class MemcachedGenerator extends Generator {
     return new net.spy.memcached.MemcachedClient(
         new net.spy.memcached.ConnectionFactoryBuilder().setDaemon(true).setFailureMode(FailureMode.Retry).build(),
         net.spy.memcached.AddrUtil.getAddresses(address));
-    //return new net.spy.memcached.MemcachedClient(new InetSocketAddress(memHost, memPort));
   }
-
-
-
 
 
   @Override
