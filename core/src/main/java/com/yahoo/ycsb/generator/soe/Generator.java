@@ -4,11 +4,8 @@ import com.yahoo.ycsb.workloads.soe.SoeQueryPredicate;
 import javafx.util.Pair;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
-import java.lang.reflect.*;
+import java.util.*;
+
 import org.json.*;
 
 
@@ -91,7 +88,37 @@ public abstract class Generator {
 
   public static final String SOE_FIELD_ORDER_LIST = "order_list";
 
+  
+  private final Set<String> allFields = new HashSet<String>() {{
+      add(SOE_FIELD_CUSTOMER_ID);
+      add(SOE_FIELD_CUSTOMER_DOCID);
+      add(SOE_FIELD_CUSTOMER_GID);
+      add(SOE_FIELD_CUSTOMER_FNAME);
+      add(SOE_FIELD_CUSTOMER_LNAME);
+      add(SOE_FIELD_CUSTOMER_MNAME);
+      add(SOE_FIELD_CUSTOMER_BALLANCE);
+      add(SOE_FIELD_CUSTOMER_DOB);
+      add(SOE_FIELD_CUSTOMER_EMAIL);
+      add(SOE_FIELD_CUSTOMER_ISACTIVE);
+      add(SOE_FIELD_CUSTOMER_LINEARSCORE);
+      add(SOE_FIELD_CUSTOMER_WEIGHTEDSCORE);
+      add(SOE_FIELD_CUSTOMER_PHONECOUNTRY);
+      add(SOE_FIELD_CUSTOMER_PHONE);
+      add(SOE_FIELD_CUSTOMER_AGEGROUP);
+      add(SOE_FIELD_CUSTOMER_AGE);
+      add(SOE_FIELD_CUSTOMER_URLPROTOCOL);
+      add(SOE_FIELD_CUSTOMER_URLSITE);
+      add(SOE_FIELD_CUSTOMER_URLDOMAIN);
+      add(SOE_FIELD_CUSTOMER_URL);
+      add(SOE_FIELD_CUSTOMER_DEVICES);
+      add(SOE_FIELD_CUSTOMER_LINKEDDEVICES);
+      add(SOE_FIELD_CUSTOMER_ADDRESS);
+      add(SOE_FIELD_CUSTOMER_CHILDREN);
+      add(SOE_FIELD_CUSTOMER_VISITEDPLACES);
+    }};
 
+  
+  
   protected abstract void setVal(String key, String value);
 
   protected abstract String getVal(String key);
@@ -99,6 +126,10 @@ public abstract class Generator {
   protected abstract int increment(String key, int step);
 
   private boolean allValuesInitialized = false;
+
+  public final Set<String> getAllFields() {
+    return allFields;
+  }
 
   public void putCustomerDocument(String docKey, String docBody) throws Exception {
     HashMap<String, String> tokens = tokenize(docBody);

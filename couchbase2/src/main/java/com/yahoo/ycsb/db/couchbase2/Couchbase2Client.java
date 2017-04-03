@@ -369,6 +369,71 @@ public class Couchbase2Client extends DB {
   }
 
 
+// *********************  SOE Read ********************************
+  @Override
+  public Status soeRead(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      if (kv) {
+        return soeReadKv(result, gen);
+      } else {
+        return soeReadN1ql(result, gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status soeReadKv(HashMap<String, ByteIterator> result, Generator gen)
+      throws Exception {
+    RawJsonDocument loaded = bucket.get(gen.getRandomCustomerId(), RawJsonDocument.class);
+    if (loaded == null) {
+      return Status.NOT_FOUND;
+    }
+    decode(loaded.content(), gen.getAllFields(), result);
+    return Status.OK;
+  }
+
+  private Status soeReadN1ql(HashMap<String, ByteIterator> result, Generator gen)
+      throws Exception {
+    String readQuery = "SELECT * FROM `" + bucketName + "` USE KEYS [$1]";
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        readQuery,
+        JsonArray.from(gen.getRandomCustomerId()),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new DBException("Error while parsing N1QL Result. Query: " + readQuery
+          + ", Errors: " + queryResult.errors());
+    }
+
+    N1qlQueryRow row;
+    try {
+      row = queryResult.rows().next();
+    } catch (NoSuchElementException ex) {
+      return Status.NOT_FOUND;
+    }
+
+    JsonObject content = row.value();
+    Set<String> fields = gen.getAllFields();
+    if (fields == null) {
+      content = content.getObject(bucketName); // n1ql result set scoped under *.bucketName
+      fields = content.getNames();
+    }
+
+    for (String field : fields) {
+      Object value = content.get(field);
+      result.put(field, new StringByteIterator(value != null ? value.toString() : ""));
+    }
+
+    return Status.OK;
+  }
+
+
+  // ************************************************************************************************
+
+
 
   @Override
   public Status read(final String table, final String key, Set<String> fields,
