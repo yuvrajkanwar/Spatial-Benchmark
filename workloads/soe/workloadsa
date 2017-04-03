@@ -40,7 +40,7 @@ insertproportion=0
 soe_insert=0
 soe_update=0
 soe_read=0
-soe_scan=1
+soe_scan=0
 soe_page=0
 soe_search=0
 soe_nestscan=0
@@ -53,5 +53,8 @@ soe_sync=0
 soe_storage_host=localhost
 soe_storage_port=8000
 
-soe_querylimit_min = 10
-soe_querylimit_max = 100
+soe_querylimit_min = 1
+soe_querylimit_max = 1
+
+soe_offset_min = 1
+soe_offset_max = 1

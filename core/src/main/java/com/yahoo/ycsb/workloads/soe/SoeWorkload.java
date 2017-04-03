@@ -74,6 +74,10 @@ public class SoeWorkload extends CoreWorkload {
   public static final String SOE_QUERY_LIMIT_MAX = "soe_querylimit_max";
   public static final String SOE_QUERY_LIMIT_MAX_DEFAULT = "100";
 
+  public static final String SOE_QUERY_OFFSET_MIN = "soe_offset_min";
+  public static final String SOE_QUERY_OFFSET_MIN_DEFAULT = "10";
+  public static final String SOE_QUERY_OFFSET_MAX = "soe_offset_max";
+  public static final String SOE_QUERY_OFFSET_MAX_DEFAULT = "100";
 
 
   @Override
@@ -199,7 +203,6 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeScan(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.soeScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -209,8 +212,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoePage(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soePage(table, cells, generator);
+      db.soePage(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -219,8 +221,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeSearch(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeSearch(table, cells, generator);
+      db.soeSearch(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -229,8 +230,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeNestScan(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeNestScan(table, cells, generator);
+      db.soeNestScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -239,8 +239,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeArrayScan(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeArrayScan(table, cells, generator);
+      db.soeArrayScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -249,18 +248,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeArrayDeepScan(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeArrayDeepScan(table, cells, generator);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      ex.printStackTrace(System.out);
-    }
-  }
-
-  public void doTransactionSoeReport2(DB db, Generator generator) {
-    try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeReport2(table, cells, generator);
+      db.soeArrayDeepScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -269,8 +257,16 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeReport(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeRead(table, cells, generator);
+      db.soeReport(table, new Vector<HashMap<String, ByteIterator>>(), generator);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      ex.printStackTrace(System.out);
+    }
+  }
+
+  public void doTransactionSoeReport2(DB db, Generator generator) {
+    try {
+      db.soeReport2(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -279,8 +275,7 @@ public class SoeWorkload extends CoreWorkload {
 
   public void doTransactionSoeSync(DB db, Generator generator) {
     try {
-      HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeSync(table, cells, generator);
+      db.soeSync(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);

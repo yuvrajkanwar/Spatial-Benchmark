@@ -30,6 +30,10 @@ public abstract class Generator {
   private Properties properties;
   private int queryLimitMin = 0;
   private int queryLimitMax = 0;
+  private int queryOffsetMin = 0;
+  private int queryOffsetMax = 0;
+
+
 
 
   private SoeQueryPredicate soePredicate;
@@ -136,6 +140,7 @@ public abstract class Generator {
 
   public Generator(Properties p) {
     properties = p;
+
     queryLimitMin = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_LIMIT_MIN,
         SoeWorkload.SOE_QUERY_LIMIT_MIN_DEFAULT));
     queryLimitMax = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_LIMIT_MAX,
@@ -145,6 +150,18 @@ public abstract class Generator {
       queryLimitMax = queryLimitMin;
       queryLimitMin = buff;
     }
+
+    queryOffsetMin = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_OFFSET_MIN,
+        SoeWorkload.SOE_QUERY_OFFSET_MIN_DEFAULT));
+    queryOffsetMax = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_OFFSET_MAX,
+        SoeWorkload.SOE_QUERY_OFFSET_MAX_DEFAULT));
+    if (queryOffsetMax < queryOffsetMin) {
+      int buff = queryOffsetMax;
+      queryOffsetMax = queryOffsetMin;
+      queryOffsetMin = buff;
+    }
+
+
   }
 
 
@@ -231,14 +248,14 @@ public abstract class Generator {
 
 
   public void buildPagePredicate() {
+    soePredicate = new SoeQueryPredicate();
     soePredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
-
-    soePredicate.setNestedPredicateA(new SoeQueryPredicate());
-    soePredicate.getNestedPredicateA().setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
-    soePredicate.getNestedPredicateA().setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+    SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
+    innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
+    innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
         SOE_FIELD_CUSTOMER_ADDRESS,
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP)));
-    soePredicate.getNestedPredicateA().setType(SoeQueryPredicate.SOE_PREDICATE_TYPE_INTEGER);
+    soePredicate.setNestedPredicateA(innerPredicate);
   }
 
 
@@ -329,9 +346,20 @@ public abstract class Generator {
   }
 
   public int getRandomLimit(){
+    if (queryLimitMax == queryLimitMin) {
+      return rand.nextInt(queryLimitMin) + 1;
+    }
     return rand.nextInt(queryLimitMax - queryLimitMin) + queryLimitMin;
   }
 
+  public int getRandomOffset(){
+
+    if (queryOffsetMax == queryOffsetMin) {
+      return rand.nextInt(queryOffsetMin) + 1;
+    }
+    return rand.nextInt(queryOffsetMax - queryOffsetMin) + queryOffsetMin;
+  }
+  
   public String getRandomOrderId() {
     if (totalDocsCount == 0) {
       totalDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
