@@ -268,12 +268,13 @@ public class Couchbase2Client extends DB {
   }
 
 
+  // *********************  SOE Insert ********************************
 
   @Override
   public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
 
     try {
-      Pair<String, String> inserDocPair = gen.getInserDocument();
+      Pair<String, String> inserDocPair = gen.getInsertDocument();
       if (kv) {
         return soeInsertKv(inserDocPair.getKey(), inserDocPair.getValue());
       } else {
@@ -284,8 +285,6 @@ public class Couchbase2Client extends DB {
       return Status.ERROR;
     }
   }
-
-
 
   private Status soeInsertKv(final String docId, final String docBody) {
     int tries = 60; // roughly 60 seconds with the 1 second sleep, not 100% accurate.
@@ -309,7 +308,6 @@ public class Couchbase2Client extends DB {
         "Check your server.");
   }
 
-
   private Status soeInsertN1ql(final String docId, final String docBody)
       throws Exception {
     String insertQuery = "INSERT INTO `" + bucketName + "`(KEY,VALUE) VALUES ($1,$2)";
@@ -328,6 +326,47 @@ public class Couchbase2Client extends DB {
   }
 
 
+  // *********************  SOE Update ********************************
+
+  @Override
+  public Status soeUpdate(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    try {
+      if (kv) {
+        return soeUpdateKv(gen);
+      } else {
+        return soeUpdateN1ql(gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status soeUpdateKv(Generator gen)  {
+
+    waitForMutationResponse(bucket.async().replace(
+        RawJsonDocument.create(gen.getRandomCustomerId(), documentExpiry, gen.getInsertDocument().getValue()),
+        persistTo,
+        replicateTo
+    ));
+    return Status.OK;
+  }
+
+  private Status soeUpdateN1ql(Generator gen)
+  throws Exception {
+    String updateQuery = "UPDATE `" + bucketName + "` USE KEYS [$1] SET " + gen.getPredicate().getName() + " = $2";
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        updateQuery,
+        JsonArray.from(gen.getRandomCustomerId(), gen.getPredicate().getValueA()),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new DBException("Error while parsing N1QL Result. Query: " + updateQuery
+          + ", Errors: " + queryResult.errors());
+    }
+    return Status.OK;
+  }
 
 
 

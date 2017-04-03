@@ -147,7 +147,7 @@ public abstract class Generator {
     }
   }
 
-  public Pair<String, String> getInserDocument() {
+  public Pair<String, String> getInsertDocument() {
     return insertDocument;
   }
 
@@ -174,10 +174,9 @@ public abstract class Generator {
     soePredicate = new SoeQueryPredicate();
     soePredicate.setName(SOE_FIELD_CUSTOMER_BALLANCE);
     soePredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
-    soePredicate.setDocid(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_DOCID)));
   }
 
-
+/*
   public void buildReadPredicate() {
     soePredicate = new SoeQueryPredicate();
     soePredicate.setDocid(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_DOCID)));
@@ -188,7 +187,7 @@ public abstract class Generator {
     soePredicate = new SoeQueryPredicate();
     soePredicate.setDocid(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_DOCID)));
   }
-
+*/
 
   public void buildPagePredicate() {
     soePredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
