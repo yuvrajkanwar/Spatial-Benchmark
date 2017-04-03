@@ -4,6 +4,8 @@ package com.yahoo.ycsb.generator.soe;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.internal.OperationFuture;
 
+import java.util.Properties;
+
 //import java.net.InetSocketAddress;
 
 
@@ -22,7 +24,9 @@ public class MemcachedGenerator extends Generator {
 
   private net.spy.memcached.MemcachedClient client;
 
-  public MemcachedGenerator(String memHost, String memPort, String totalDocs) throws Exception {
+  public MemcachedGenerator(Properties p, String memHost, String memPort, String totalDocs) throws Exception {
+
+    super(p);
     try {
       client = createMemcachedClient(memHost, Integer.parseInt(memPort));
       String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;

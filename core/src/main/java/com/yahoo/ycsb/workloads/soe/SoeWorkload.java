@@ -11,6 +11,7 @@ import com.yahoo.ycsb.WorkloadException;
 
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Vector;
 
 /**
  * Created by oleksandr.gyryk on 3/20/17.
@@ -67,13 +68,21 @@ public class SoeWorkload extends CoreWorkload {
   public static final String SOE_SYNC_PROPORTION_PROPERTY_DEFAULT = "0.00";
 
 
+
+  public static final String SOE_QUERY_LIMIT_MIN = "soe_querylimit_min";
+  public static final String SOE_QUERY_LIMIT_MIN_DEFAULT = "10";
+  public static final String SOE_QUERY_LIMIT_MAX = "soe_querylimit_max";
+  public static final String SOE_QUERY_LIMIT_MAX_DEFAULT = "100";
+
+
+
   @Override
   public Object initThread(Properties p, int mythreadid, int threadcount) throws WorkloadException {
     String memHost = p.getProperty(STORAGE_HOST, STORAGE_HOST_DEFAULT);
     String memPort = p.getProperty(STORAGE_PORT, STORAGE_PORT_DEFAULT);
     String totalDocs = p.getProperty(TOTAL_DOCS, TOTAL_DOCS_DEFAULT);
     try {
-      return new MemcachedGenerator(memHost, memPort, totalDocs);
+      return new MemcachedGenerator(p, memHost, memPort, totalDocs);
     } catch (Exception e) {
       System.err.println("Memcached generator init failed " + e.getMessage());
       throw new WorkloadException();
@@ -86,7 +95,6 @@ public class SoeWorkload extends CoreWorkload {
     super.init(p);
     operationchooser = createOperationGenerator(p);
   }
-
 
   @Override
   public boolean doInsert(DB db, Object threadstate) {
@@ -192,7 +200,7 @@ public class SoeWorkload extends CoreWorkload {
   public void doTransactionSoeScan(DB db, Generator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
-      db.soeScan(table, cells, generator);
+      db.soeScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);

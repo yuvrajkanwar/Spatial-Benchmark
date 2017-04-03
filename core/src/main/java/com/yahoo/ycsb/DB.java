@@ -163,7 +163,7 @@ public abstract class DB {
     return null;
   }
 
-  public Status soeScan(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+  public Status soeScan(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
     System.err.println("soeScan not implemented");
     return null;
   }

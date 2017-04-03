@@ -1,6 +1,7 @@
 package com.yahoo.ycsb.generator.soe;
 
 import com.yahoo.ycsb.workloads.soe.SoeQueryPredicate;
+import com.yahoo.ycsb.workloads.soe.SoeWorkload;
 import javafx.util.Pair;
 
 
@@ -24,6 +25,11 @@ public abstract class Generator {
   private int totalDocsCount = 0;
   private int storedDocsCount = 0;
   private Random rand = new Random();
+
+  private boolean allValuesInitialized = false;
+  private Properties properties;
+  private int queryLimitMin = 0;
+  private int queryLimitMax = 0;
 
 
   private SoeQueryPredicate soePredicate;
@@ -117,15 +123,31 @@ public abstract class Generator {
       add(SOE_FIELD_CUSTOMER_VISITEDPLACES);
     }};
 
-  
-  
+
+
+
+
   protected abstract void setVal(String key, String value);
 
   protected abstract String getVal(String key);
 
   protected abstract int increment(String key, int step);
 
-  private boolean allValuesInitialized = false;
+
+  public Generator(Properties p) {
+    properties = p;
+    queryLimitMin = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_LIMIT_MIN,
+        SoeWorkload.SOE_QUERY_LIMIT_MIN_DEFAULT));
+    queryLimitMax = Integer.parseInt(p.getProperty(SoeWorkload.SOE_QUERY_LIMIT_MAX,
+        SoeWorkload.SOE_QUERY_LIMIT_MAX_DEFAULT));
+    if (queryLimitMax < queryLimitMin) {
+      int buff = queryLimitMax;
+      queryLimitMax = queryLimitMin;
+      queryLimitMin = buff;
+    }
+  }
+
+
 
   public final Set<String> getAllFields() {
     return allFields;
@@ -207,18 +229,6 @@ public abstract class Generator {
     soePredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
   }
 
-/*
-  public void buildReadPredicate() {
-    soePredicate = new SoeQueryPredicate();
-    soePredicate.setDocid(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_DOCID)));
-  }
-
-
-  public void buildScanPredicate() {
-    soePredicate = new SoeQueryPredicate();
-    soePredicate.setDocid(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_DOCID)));
-  }
-*/
 
   public void buildPagePredicate() {
     soePredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
@@ -316,6 +326,10 @@ public abstract class Generator {
           SOE_SYSTEMFIELD_TOTALDOCS_COUNT));
     }
     return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(totalDocsCount);
+  }
+
+  public int getRandomLimit(){
+    return rand.nextInt(queryLimitMax - queryLimitMin) + queryLimitMin;
   }
 
   public String getRandomOrderId() {

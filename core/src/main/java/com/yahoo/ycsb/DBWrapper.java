@@ -330,7 +330,7 @@ public class DBWrapper extends DB {
     }
   }
 
-  public Status soeScan(String table, HashMap<String, ByteIterator> result, Generator generator) {
+  public Status soeScan(String table, Vector<HashMap<String, ByteIterator>> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
