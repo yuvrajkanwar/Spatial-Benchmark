@@ -261,26 +261,27 @@ public abstract class Generator {
 
   public void buildSearchPredicatesSequenceN3() {
     SoeQueryPredicate predicate;
+    soePredicatesSequence = new ArrayList<SoeQueryPredicate>();
 
     predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
-    predicate.setNestedPredicateA(new SoeQueryPredicate());
-    predicate.getNestedPredicateA().setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY);
-    predicate.getNestedPredicateA().setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+    SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
+    innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY);
+    innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
         SOE_FIELD_CUSTOMER_ADDRESS,
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY)));
+    predicate.setNestedPredicateA(innerPredicate);
     soePredicatesSequence.add(predicate);
-
 
     predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_AGEGROUP);
     predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_AGEGROUP)));
     soePredicatesSequence.add(predicate);
 
-
     predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_DOB);
-    predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_DOB)));
+    predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+        SOE_FIELD_CUSTOMER_DOB)).split("-")[0]);
     soePredicatesSequence.add(predicate);
 
   }

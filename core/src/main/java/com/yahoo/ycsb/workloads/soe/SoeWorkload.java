@@ -85,6 +85,7 @@ public class SoeWorkload extends CoreWorkload {
     String memHost = p.getProperty(STORAGE_HOST, STORAGE_HOST_DEFAULT);
     String memPort = p.getProperty(STORAGE_PORT, STORAGE_PORT_DEFAULT);
     String totalDocs = p.getProperty(TOTAL_DOCS, TOTAL_DOCS_DEFAULT);
+    System.out.println(memHost + " - " + memPort + " - " + totalDocs);
     try {
       return new MemcachedGenerator(p, memHost, memPort, totalDocs);
     } catch (Exception e) {
