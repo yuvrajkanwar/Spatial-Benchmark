@@ -298,7 +298,7 @@ public abstract class Generator {
         SOE_FIELD_CUSTOMER_ADDRESS, SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR,
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_ZIP);
     predicate.getNestedPredicateA().getNestedPredicateA().setValueA(getVal(key));
-    predicate.getNestedPredicateA().getNestedPredicateA().setType(SoeQueryPredicate.SOE_PREDICATE_TYPE_INTEGER);
+    soePredicate = predicate;
   }
 
 
