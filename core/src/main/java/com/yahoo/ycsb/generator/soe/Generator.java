@@ -313,15 +313,32 @@ public abstract class Generator {
   public void buildArrayDeepScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES);
-    predicate.setNestedPredicateA(new SoeQueryPredicate());
-    predicate.getNestedPredicateA().setName(SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY);
-    predicate.getNestedPredicateA().setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
-        SOE_FIELD_CUSTOMER_VISITEDPLACES, SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY)));
-    predicate.setNestedPredicateB(new SoeQueryPredicate());
-    predicate.getNestedPredicateB().setName(SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY);
-    predicate.getNestedPredicateB().setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
-        SOE_FIELD_CUSTOMER_VISITEDPLACES, SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES)));
+
+    if (storedDocsCount == 0) {
+      storedDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT));
+    }
+
+    int storageKeyOffset = rand.nextInt(storedDocsCount);
+    String storageKeyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+        SOE_FIELD_CUSTOMER_VISITEDPLACES + SOE_SYSTEMFIELD_DELIMITER;
+
+    SoeQueryPredicate innerPredicateA = new SoeQueryPredicate();
+    innerPredicateA.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY);
+    innerPredicateA.setValueA(getVal(storageKeyPrefix +
+        SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY + SOE_SYSTEMFIELD_DELIMITER + storageKeyOffset));
+
+    SoeQueryPredicate innerPredicateB = new SoeQueryPredicate();
+    innerPredicateB.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES);
+    innerPredicateB.setValueA(getVal(storageKeyPrefix +
+        SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES + SOE_SYSTEMFIELD_DELIMITER + storageKeyOffset));
+
+    predicate.setNestedPredicateA(innerPredicateA);
+    predicate.setNestedPredicateB(innerPredicateB);
+    soePredicate = predicate;
+
   }
+
 
 
   public void buildReport1Predicate() {

@@ -840,7 +840,7 @@ public class Couchbase2Client extends DB {
   private Status soeNestScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
     int recordcount = gen.getRandomLimit();
-    String soeNestScanN1qlQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE " +
+    String soeNestScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE " +
         gen.getPredicate().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getName() + " = $1  LIMIT $2";
@@ -905,7 +905,7 @@ public class Couchbase2Client extends DB {
           @Override
           public void call(AsyncN1qlQueryResult result) {
             if (!result.parseSuccess()) {
-              throw new RuntimeException("Error while parsing N1QL Result. Query: soeNestedScanKv(), " +
+              throw new RuntimeException("Error while parsing N1QL Result. Query: soeArrayScanKv(), " +
                   "Errors: " + result.errors());
             }
           }
@@ -947,7 +947,7 @@ public class Couchbase2Client extends DB {
   private Status soeArrayScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
-    String soeArrayScanN1qlQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN " +
+    String soeArrayScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE ANY v IN " +
         gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY " +
         gen.getPredicate().getName()  + " LIMIT $2";
 
@@ -960,6 +960,125 @@ public class Couchbase2Client extends DB {
 
     if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
       throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeArrayScanN1qlQuery
+          + ", Errors: " + queryResult.errors());
+    }
+    result.ensureCapacity(recordcount);
+
+    for (N1qlQueryRow row : queryResult) {
+      JsonObject value = row.value();
+      HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
+      for (String field : gen.getAllFields()) {
+        tuple.put(field, new StringByteIterator(value.getString(field)));
+      }
+      result.add(tuple);
+
+    }
+    return Status.OK;
+  }
+
+
+  // *********************  SOE ArrayDeepScan ********************************
+
+  @Override
+  public Status soeArrayDeepScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    try {
+      if (kv) {
+        return soeArrayDeepScanKv(result, gen);
+      } else {
+        return soeArrayDeepScanN1ql(result, gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  /*
+  SELECT META().id FROM customer
+  WHERE ANY v in visited_places SATISFIES
+  v.country = “France” AND
+  ANY c in v.cities SATISFIES c = “Paris” END
+      END
+  ORDER BY META().id
+  LIMIT <num>
+  */
+
+  private Status soeArrayDeepScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+
+    final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
+    String soeArrayDeepScanKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v in " +
+        gen.getPredicate().getName() + " SATISFIES v." +
+        gen.getPredicate().getNestedPredicateA().getName() + " = $1 AND ANY c in v." +
+        gen.getPredicate().getNestedPredicateB().getName() + " SATISFIES c = $2 END END ORDER BY meta().id LIMIT $3";
+
+    bucket.async()
+        .query(N1qlQuery.parameterized(
+            soeArrayDeepScanKvQuery,
+            JsonArray.from(gen.getPredicate().getNestedPredicateA().getValueA(),
+                gen.getPredicate().getNestedPredicateB().getValueA(), recordcount),
+            N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+        ))
+        .doOnNext(new Action1<AsyncN1qlQueryResult>() {
+          @Override
+          public void call(AsyncN1qlQueryResult result) {
+            if (!result.parseSuccess()) {
+              throw new RuntimeException("Error while parsing N1QL Result. Query: soeArrayDeepScanKv(), " +
+                  "Errors: " + result.errors());
+            }
+          }
+        })
+        .flatMap(new Func1<AsyncN1qlQueryResult, Observable<AsyncN1qlQueryRow>>() {
+          @Override
+          public Observable<AsyncN1qlQueryRow> call(AsyncN1qlQueryResult result) {
+            return result.rows();
+          }
+        })
+        .flatMap(new Func1<AsyncN1qlQueryRow, Observable<RawJsonDocument>>() {
+          @Override
+          public Observable<RawJsonDocument> call(AsyncN1qlQueryRow row) {
+            String id = new String(row.byteValue()).trim();
+            return bucket.async().get(id.substring(1, id.length()-1), RawJsonDocument.class);
+          }
+        })
+        .map(new Func1<RawJsonDocument, HashMap<String, ByteIterator>>() {
+          @Override
+          public HashMap<String, ByteIterator> call(RawJsonDocument document) {
+            HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
+            decode(document.content(), null, tuple);
+            return tuple;
+          }
+        })
+        .toBlocking()
+        .forEach(new Action1<HashMap<String, ByteIterator>>() {
+          @Override
+          public void call(HashMap<String, ByteIterator> tuple) {
+            data.add(tuple);
+          }
+        });
+
+    result.addAll(data);
+    return Status.OK;
+  }
+
+
+  private Status soeArrayDeepScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+
+    String soeArrayDeepScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE ANY v in " +
+        gen.getPredicate().getName() + " SATISFIES v." +
+        gen.getPredicate().getNestedPredicateA().getName() + " = $1 AND ANY c in v." +
+        gen.getPredicate().getNestedPredicateB().getName() + " SATISFIES c = $2 END END ORDER BY meta().id LIMIT $3";
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        soeArrayDeepScanN1qlQuery,
+        JsonArray.from(gen.getPredicate().getNestedPredicateA().getValueA(),
+            gen.getPredicate().getNestedPredicateB().getValueA(), recordcount),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeArrayDeepScanN1qlQuery
           + ", Errors: " + queryResult.errors());
     }
     result.ensureCapacity(recordcount);
