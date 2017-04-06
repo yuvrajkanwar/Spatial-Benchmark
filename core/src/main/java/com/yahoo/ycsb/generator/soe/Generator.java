@@ -23,7 +23,8 @@ import org.json.*;
 public abstract class Generator {
 
   private int totalDocsCount = 0;
-  private int storedDocsCount = 0;
+  private int storedDocsCountCustomer = 0;
+  private int storedDocsCountOrder = 0;
   private Random rand = new Random();
 
   private boolean allValuesInitialized = false;
@@ -45,7 +46,8 @@ public abstract class Generator {
 
   public static final String SOE_SYSTEMFIELD_DELIMITER = ":::";
   public static final String SOE_SYSTEMFIELD_INSERTDOC_COUNTER = "SOE_insert_document_counter";
-  public static final String SOE_SYSTEMFIELD_STORAGEDOCS_COUNT = "SOE_storage_docs_count";
+  public static final String SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER = "SOE_storage_docs_count_customer";
+  public static final String SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER = "SOE_storage_docs_count_order";
   public static final String SOE_SYSTEMFIELD_TOTALDOCS_COUNT = "SOE_total_docs_count";
 
   private static final String SOE_METAFIELD_DOCID = "SOE_doc_id";
@@ -95,10 +97,21 @@ public abstract class Generator {
   private static final String SOE_FIELD_CUSTOMER_VISITEDPLACES = "visited_places";
   private static final String SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY = "country";
   private static final String SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES = "cities";
+  public static final String SOE_FIELD_CUSTOMER_ORDER_LIST = "order_list";
 
-  public static final String SOE_FIELD_ORDER_LIST = "order_list";
+  private static final String SOE_FIELD_ORDER_ID = "_id";
+  private static final String SOE_FIELD_ORDER_CUSTOMERID = "customer_id";
+  private static final String SOE_FIELD_ORDER_SOLDDATETIME = "sold_datetime";
+  private static final String SOE_FIELD_ORDER_QUANTITY = "quantity";
+  private static final String SOE_FIELD_ORDER_LISTPRICE = "list_price";
+  private static final String SOE_FIELD_ORDER_DISCOUNT = "discount_amount_percent";
+  private static final String SOE_FIELD_ORDER_SALEPRICE = "sale_price";
+  private static final String SOE_FIELD_ORDER_TAX = "tax";
+  private static final String SOE_FIELD_ORDER_COUPON = "coupon";
+  private static final String SOE_FIELD_ORDER_DEPARTMNET = "department";
+  private static final String SOE_FIELD_ORDER_PRODUCTNAME = "product_name";
 
-  
+
   private final Set<String> allFields = new HashSet<String>() {{
       add(SOE_FIELD_CUSTOMER_ID);
       add(SOE_FIELD_CUSTOMER_DOCID);
@@ -173,7 +186,7 @@ public abstract class Generator {
   public void putCustomerDocument(String docKey, String docBody) throws Exception {
     HashMap<String, String> tokens = tokenize(docBody);
     String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
-    int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT, 1) - 1;
+    int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER, 1) - 1;
 
     setVal(prefix + SOE_METAFIELD_DOCID + SOE_SYSTEMFIELD_DELIMITER + storageCount, docKey);
     setVal(prefix + SOE_METAFIELD_INSERTDOC + SOE_SYSTEMFIELD_DELIMITER + storageCount, docBody);
@@ -214,6 +227,30 @@ public abstract class Generator {
         }
       }
       allValuesInitialized = !nullDetected;
+    }
+  }
+
+  public void putOrderDocument(String docKey, String docBody) throws Exception {
+    HashMap<String, String> tokens = tokenizeOrderFields(docBody);
+
+    String prefix = SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
+    int storageCount = increment(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER, 1) - 1;
+
+    for (String key : tokens.keySet()){
+      String storageKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + storageCount;
+      String value = tokens.get(key);
+      if (value != null) {
+        setVal(storageKey, value);
+      }  else {
+        for (int i = (storageCount-1); i>0; i--) {
+          String prevKey = prefix + key + SOE_SYSTEMFIELD_DELIMITER + i;
+          String prevVal = getVal(prevKey);
+          if (prevVal != null) {
+            setVal(storageKey, prevVal);
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -314,12 +351,12 @@ public abstract class Generator {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES);
 
-    if (storedDocsCount == 0) {
-      storedDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT));
+    if (storedDocsCountCustomer == 0) {
+      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
     }
 
-    int storageKeyOffset = rand.nextInt(storedDocsCount);
+    int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
     String storageKeyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
         SOE_FIELD_CUSTOMER_VISITEDPLACES + SOE_SYSTEMFIELD_DELIMITER;
 
@@ -340,15 +377,50 @@ public abstract class Generator {
   }
 
 
+  public void buildReport1PredicateSequence() {
 
-  public void buildReport1Predicate() {
+    if (storedDocsCountCustomer == 0) {
+      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
+    }
+
+    soePredicatesSequence = new ArrayList<>();
+    SoeQueryPredicate predicate = new SoeQueryPredicate();
+    predicate.setName(SOE_FIELD_CUSTOMER_ORDER_LIST);
+    soePredicatesSequence.add(predicate);
+
+    predicate = new SoeQueryPredicate();
+    predicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
+    SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
+    innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
+    int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
+    String storageKeyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+        SOE_FIELD_CUSTOMER_ADDRESS + SOE_SYSTEMFIELD_DELIMITER +
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER;
+    innerPredicate.setValueA(getVal(storageKeyPrefix + storageKeyOffset));
+    predicate.setNestedPredicateA(innerPredicate);
+    soePredicatesSequence.add(predicate);
+
+  }
+
+ /*
+  SELECT *
+  FROM customer c INNER JOIN orders o ON KEYS c.order_list
+  WHERE address.zip = “val”
+*/
+
+  public void buildReport2PredicateSequence() {
     // todo
   }
 
-
-  public void buildReport2Predicate() {
-    // todo
-  }
+  /*
+  SELECT  o.day, c.zip, SUM(o.salesamt)
+  FROM customer c INNER JOIN orders o ON KEYS c.order_list
+  WHERE c.zip = “value”
+  AND o.day = “value”
+  GROUP BY c.day, c.zip
+  ORDER BY SUM(o.sales_amt)
+*/
 
 
   public void buildSyncPredicate() {
@@ -389,11 +461,11 @@ public abstract class Generator {
 
 
   private String buildStorageKey(String token1) {
-    if (storedDocsCount == 0) {
-      storedDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT));
+    if (storedDocsCountCustomer == 0) {
+      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
     }
-    return token1 + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(storedDocsCount);
+    return token1 + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(storedDocsCountCustomer);
   }
 
   private String buildStorageKey(String token1, String token2) {
@@ -442,8 +514,46 @@ public abstract class Generator {
   }
 
 
-  private void tokenizeFields(JSONObject obj, HashMap<String, String> tokens) {
+  private HashMap<String, String>  tokenizeOrderFields(String jsonString) {
+    HashMap<String, String> tokens = new HashMap<String, String>();
+    JSONObject obj = new JSONObject(jsonString);
 
+    //string
+    ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_ID, SOE_FIELD_ORDER_SOLDDATETIME,
+        SOE_FIELD_ORDER_COUPON, SOE_FIELD_ORDER_DEPARTMNET, SOE_FIELD_ORDER_PRODUCTNAME,
+        SOE_FIELD_ORDER_CUSTOMERID));
+
+    for (String field : stringFields) {
+      tokens.put(field, null);
+      if (obj.has(field) && !obj.isNull(field)) {
+        tokens.put(field, obj.getString(field));
+      }
+    }
+
+    //integer
+    ArrayList<String> intFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_QUANTITY, SOE_FIELD_ORDER_DISCOUNT));
+
+    for (String field : intFields) {
+      tokens.put(field, null);
+      if (obj.has(field) && !obj.isNull(field)) {
+        tokens.put(field, String.valueOf(obj.getInt(field)));
+      }
+    }
+
+    //float
+    ArrayList<String> floatFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_LISTPRICE,
+        SOE_FIELD_ORDER_SALEPRICE, SOE_FIELD_ORDER_TAX));
+    for (String field : floatFields) {
+      tokens.put(field, null);
+      if (obj.has(field) && !obj.isNull(field)) {
+        tokens.put(field, String.valueOf(obj.getDouble(field)));
+      }
+    }
+
+    return tokens;
+  }
+
+  private void tokenizeFields(JSONObject obj, HashMap<String, String> tokens) {
 
 
     //string
@@ -485,6 +595,16 @@ public abstract class Generator {
 
     //array
     String field = SOE_FIELD_CUSTOMER_DEVICES;
+    tokens.put(field, null);
+    if (obj.has(field) && !obj.isNull(field)) {
+      JSONArray arr = obj.getJSONArray(field);
+      if (arr.length() > 0) {
+        int element = rand.nextInt(arr.length());
+        tokens.put(field, arr.getString(element));
+      }
+    }
+
+    field = SOE_FIELD_CUSTOMER_ORDER_LIST;
     tokens.put(field, null);
     if (obj.has(field) && !obj.isNull(field)) {
       JSONArray arr = obj.getJSONArray(field);

@@ -40,8 +40,14 @@ public class MemcachedGenerator extends Generator {
             String.valueOf(Integer.parseInt(totalDocs) + 1));
       }
 
-      if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT) == null) {
-        client.add(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT, 0, "0");
+      if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER) == null) {
+        client.add(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER, 0, "0");
+      }
+
+      prefix =  SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
+
+      if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER) == null) {
+        client.add(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER, 0, "0");
       }
 
     } catch (Exception e) {

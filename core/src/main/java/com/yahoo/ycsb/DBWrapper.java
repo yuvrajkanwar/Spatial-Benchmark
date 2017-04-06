@@ -409,7 +409,7 @@ public class DBWrapper extends DB {
 
   public Status soeReport(String table, Vector<HashMap<String, ByteIterator>> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
-      generator.buildReport1Predicate();
+      generator.buildReport1PredicateSequence();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
       Status res = db.soeReport(table, result, generator);
@@ -422,7 +422,7 @@ public class DBWrapper extends DB {
 
   public Status soeReport2(String table, Vector<HashMap<String, ByteIterator>> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
-      generator.buildReport2Predicate();
+      generator.buildReport2PredicateSequence();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
       Status res = db.soeReport2(table, result, generator);

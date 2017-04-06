@@ -265,6 +265,33 @@ public class Couchbase2Client extends DB {
       RawJsonDocument doc = bucket.get(docId, RawJsonDocument.class);
       if (doc != null) {
         generator.putCustomerDocument(docId, doc.content().toString());
+
+        try {
+          JsonNode json = JacksonTransformers.MAPPER.readTree(doc.content());
+          for (Iterator<Map.Entry<String, JsonNode>> jsonFields = json.fields(); jsonFields.hasNext();) {
+            Map.Entry<String, JsonNode> jsonField = jsonFields.next();
+            String name = jsonField.getKey();
+            if (name.equals(Generator.SOE_FIELD_CUSTOMER_ORDER_LIST)) {
+              JsonNode jsonValue = jsonField.getValue();
+              ArrayList<String> orders = new ArrayList<>();
+              for (final JsonNode objNode : jsonValue) {
+                orders.add(objNode.asText());
+              }
+              if (orders.size() > 0) {
+                String pickedOrder;
+                if (orders.size() >1) {
+                  Collections.shuffle(orders);
+                }
+                pickedOrder = orders.get(0);
+                RawJsonDocument orderDoc = bucket.get(pickedOrder, RawJsonDocument.class);
+                generator.putOrderDocument(pickedOrder, orderDoc.content().toString());
+              }
+            }
+          }
+        } catch (Exception e) {
+          throw new RuntimeException("Could not decode JSON");
+        }
+
       } else {
         System.err.println("Error getting document from DB: " + docId);
       }
@@ -1094,6 +1121,58 @@ public class Couchbase2Client extends DB {
     }
     return Status.OK;
   }
+
+
+  // *********************  SOE Report  ********************************
+
+  @Override
+  public Status soeReport(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    try {
+      if (kv) {
+        return soeReport1Kv(result, gen);
+      } else {
+        return soeReport1N1ql(result, gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status soeReport1Kv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    System.err.println("Not implemented");
+    return Status.OK;
+  }
+
+
+  private Status soeReport1N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+
+    String soeReport1N1qlQuery = "SELECT * FROM `" +  bucketName + "` c INNER JOIN `" +  bucketName + "` o " +
+        "ON KEYS c." + gen.getPredicatesSequence().get(0).getName() + " WHERE c." +
+        gen.getPredicatesSequence().get(1).getName() + "." +
+        gen.getPredicatesSequence().get(1).getNestedPredicateA().getName()+ " = $1 ";
+
+    //System.out.println(soeReport1N1qlQuery);
+    //System.out.println(gen.getPredicatesSequence().get(1).getNestedPredicateA().getValueA());
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+         soeReport1N1qlQuery,
+         JsonArray.from(gen.getPredicatesSequence().get(1).getNestedPredicateA().getValueA()),
+         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeReport1N1qlQuery
+          + ", Errors: " + queryResult.errors());
+    }
+
+    //for (N1qlQueryRow row : queryResult) {
+      //System.out.println(row.value().toString());
+    //}
+
+    return Status.OK;
+  }
+
+
 
   // ************************************************************************************************
 
