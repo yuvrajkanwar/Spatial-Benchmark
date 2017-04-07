@@ -46,8 +46,8 @@ soe_search=0.1
 soe_nestscan=0.1
 soe_arrayscan=0.1
 soe_arraydeepscan=0.1
-soe_report=0.1
-soe_report2=0
+soe_report=0.05
+soe_report2=0.05
 soe_sync=0
 
 soe_storage_host=localhost

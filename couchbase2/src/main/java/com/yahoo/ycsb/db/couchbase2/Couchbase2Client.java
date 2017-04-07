@@ -1020,16 +1020,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /*
-  SELECT META().id FROM customer
-  WHERE ANY v in visited_places SATISFIES
-  v.country = “France” AND
-  ANY c in v.cities SATISFIES c = “Paris” END
-      END
-  ORDER BY META().id
-  LIMIT <num>
-  */
-
   private Status soeArrayDeepScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
@@ -1152,9 +1142,6 @@ public class Couchbase2Client extends DB {
         gen.getPredicatesSequence().get(1).getName() + "." +
         gen.getPredicatesSequence().get(1).getNestedPredicateA().getName()+ " = $1 ";
 
-    //System.out.println(soeReport1N1qlQuery);
-    //System.out.println(gen.getPredicatesSequence().get(1).getNestedPredicateA().getValueA());
-
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
          soeReport1N1qlQuery,
          JsonArray.from(gen.getPredicatesSequence().get(1).getNestedPredicateA().getValueA()),
@@ -1164,15 +1151,63 @@ public class Couchbase2Client extends DB {
       throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeReport1N1qlQuery
           + ", Errors: " + queryResult.errors());
     }
-
-    //for (N1qlQueryRow row : queryResult) {
-      //System.out.println(row.value().toString());
-    //}
-
     return Status.OK;
   }
 
 
+  // *********************  SOE Report  ********************************
+
+  @Override
+  public Status soeReport2(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    try {
+      if (kv) {
+        return soeReport2Kv(result, gen);
+      } else {
+        return soeReport2N1ql(result, gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status soeReport2Kv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    System.err.println("Not implemented");
+    return Status.OK;
+  }
+
+  private Status soeReport2N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+
+    String soeReport2N1qlQuery = "SELECT o." + gen.getPredicatesSequence().get(0).getName() +
+        ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
+        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + ", SUM(o." +
+        gen.getPredicatesSequence().get(1).getName() + ") FROM `" +  bucketName
+        + "` c INNER JOIN `" +  bucketName + "` o ON KEYS c." + gen.getPredicatesSequence().get(3).getName() +
+        " WHERE c." + gen.getPredicatesSequence().get(2).getName() + "."
+        + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " = $1 AND o." +
+        gen.getPredicatesSequence().get(0).getName() + " = $2 GROUP BY o." +
+        gen.getPredicatesSequence().get(0).getName() + ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
+        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o." +
+        gen.getPredicatesSequence().get(1).getName() + ")";
+    /*
+    System.out.println(soeReport2N1qlQuery);
+    System.out.println(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA());
+    System.out.println(gen.getPredicatesSequence().get(0).getValueA());
+    */
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        soeReport2N1qlQuery,
+        JsonArray.from(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA(),
+            gen.getPredicatesSequence().get(0).getValueA()),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeReport2N1qlQuery
+          + ", Errors: " + queryResult.errors());
+    }
+
+    return Status.OK;
+  }
 
   // ************************************************************************************************
 

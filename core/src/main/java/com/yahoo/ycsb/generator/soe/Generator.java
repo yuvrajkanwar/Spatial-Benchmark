@@ -101,7 +101,10 @@ public abstract class Generator {
 
   private static final String SOE_FIELD_ORDER_ID = "_id";
   private static final String SOE_FIELD_ORDER_CUSTOMERID = "customer_id";
-  private static final String SOE_FIELD_ORDER_SOLDDATETIME = "sold_datetime";
+  private static final String SOE_FIELD_ORDER_YEAR = "year";
+  private static final String SOE_FIELD_ORDER_MONTH = "month";
+  private static final String SOE_FIELD_ORDER_DAY = "day";
+  private static final String SOE_FIELD_ORDER_WEEKDAY = "weekday";
   private static final String SOE_FIELD_ORDER_QUANTITY = "quantity";
   private static final String SOE_FIELD_ORDER_LISTPRICE = "list_price";
   private static final String SOE_FIELD_ORDER_DISCOUNT = "discount_amount_percent";
@@ -400,26 +403,61 @@ public abstract class Generator {
     innerPredicate.setValueA(getVal(storageKeyPrefix + storageKeyOffset));
     predicate.setNestedPredicateA(innerPredicate);
     soePredicatesSequence.add(predicate);
-
   }
 
- /*
-  SELECT *
-  FROM customer c INNER JOIN orders o ON KEYS c.order_list
-  WHERE address.zip = “val”
-*/
-
   public void buildReport2PredicateSequence() {
-    // todo
+
+    if (storedDocsCountCustomer == 0) {
+      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
+    }
+
+    if (storedDocsCountOrder == 0) {
+      storedDocsCountOrder = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER));
+    }
+
+    soePredicatesSequence = new ArrayList<>();
+
+    //int storageKeyOffset = rand.nextInt(storedDocsCountOrder);
+    //int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
+
+    String orderPrefix = SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
+    String customerPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
+
+    SoeQueryPredicate oDatePredicate = new SoeQueryPredicate();
+    oDatePredicate.setName(SOE_FIELD_ORDER_MONTH);
+    oDatePredicate.setValueA(getVal(orderPrefix + SOE_FIELD_ORDER_MONTH + SOE_SYSTEMFIELD_DELIMITER +
+        rand.nextInt(storedDocsCountOrder)));
+    soePredicatesSequence.add(oDatePredicate);
+
+    SoeQueryPredicate oSalepricePredicate = new SoeQueryPredicate();
+    oSalepricePredicate.setName(SOE_FIELD_ORDER_SALEPRICE);
+    oSalepricePredicate.setValueA(getVal(orderPrefix + SOE_FIELD_ORDER_SALEPRICE + SOE_SYSTEMFIELD_DELIMITER +
+        rand.nextInt(storedDocsCountOrder)));
+    soePredicatesSequence.add(oSalepricePredicate);
+
+    SoeQueryPredicate cAddressPredicate = new SoeQueryPredicate();
+    cAddressPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
+    SoeQueryPredicate cAddressZipPredicate = new SoeQueryPredicate();
+    cAddressZipPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
+    cAddressZipPredicate.setValueA(getVal(customerPrefix + SOE_FIELD_CUSTOMER_ADDRESS + SOE_SYSTEMFIELD_DELIMITER +
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(storedDocsCountCustomer)));
+    cAddressPredicate.setNestedPredicateA(cAddressZipPredicate);
+    soePredicatesSequence.add(cAddressPredicate);
+
+    SoeQueryPredicate cOrderList = new SoeQueryPredicate();
+    cOrderList.setName(SOE_FIELD_CUSTOMER_ORDER_LIST);
+    soePredicatesSequence.add(cOrderList);
   }
 
   /*
-  SELECT  o.day, c.zip, SUM(o.salesamt)
-  FROM customer c INNER JOIN orders o ON KEYS c.order_list
-  WHERE c.zip = “value”
-  AND o.day = “value”
-  GROUP BY c.day, c.zip
-  ORDER BY SUM(o.sales_amt)
+  SELECT  o.sold_date, c.address.zip, SUM(o.sale_price)
+  FROM <bucket> c INNER JOIN <bucket> o ON KEYS c.order_list
+  WHERE c.address.zip = “value”
+  AND o.sold_date = “value”
+  GROUP BY c.sold_date, c.address.zip
+  ORDER BY SUM(o.sales_price)
 */
 
 
@@ -519,9 +557,9 @@ public abstract class Generator {
     JSONObject obj = new JSONObject(jsonString);
 
     //string
-    ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_ID, SOE_FIELD_ORDER_SOLDDATETIME,
-        SOE_FIELD_ORDER_COUPON, SOE_FIELD_ORDER_DEPARTMNET, SOE_FIELD_ORDER_PRODUCTNAME,
-        SOE_FIELD_ORDER_CUSTOMERID));
+    ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_ID, SOE_FIELD_ORDER_YEAR,
+        SOE_FIELD_ORDER_MONTH, SOE_FIELD_ORDER_WEEKDAY, SOE_FIELD_ORDER_COUPON, SOE_FIELD_ORDER_DEPARTMNET,
+        SOE_FIELD_ORDER_PRODUCTNAME, SOE_FIELD_ORDER_CUSTOMERID));
 
     for (String field : stringFields) {
       tokens.put(field, null);
@@ -531,7 +569,8 @@ public abstract class Generator {
     }
 
     //integer
-    ArrayList<String> intFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_QUANTITY, SOE_FIELD_ORDER_DISCOUNT));
+    ArrayList<String> intFields = new ArrayList<>(Arrays.asList(SOE_FIELD_ORDER_QUANTITY, SOE_FIELD_ORDER_DISCOUNT,
+        SOE_FIELD_ORDER_DAY));
 
     for (String field : intFields) {
       tokens.put(field, null);
