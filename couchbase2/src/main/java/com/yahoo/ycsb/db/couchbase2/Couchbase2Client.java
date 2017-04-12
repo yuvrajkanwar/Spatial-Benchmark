@@ -1190,11 +1190,11 @@ public class Couchbase2Client extends DB {
         gen.getPredicatesSequence().get(0).getName() + ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
         gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o." +
         gen.getPredicatesSequence().get(1).getName() + ")";
-
+  /*
     System.out.println(soeReport2N1qlQuery);
     System.out.println(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA());
     System.out.println(gen.getPredicatesSequence().get(0).getValueA());
-
+*/
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeReport2N1qlQuery,
         JsonArray.from(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA(),
