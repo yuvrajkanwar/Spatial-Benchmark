@@ -307,7 +307,6 @@ public class DBWrapper extends DB {
   public Status soeUpdate(String table, HashMap<String, ByteIterator> result, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringRead)) {
       generator.buildUpdatePredicate();
-      generator.buildInsertDocument();
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
       Status res = db.soeUpdate(table, result, generator);

@@ -70,7 +70,6 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import javafx.util.Pair;
 
 /**
  * A class that wraps the 2.x Couchbase SDK to be used with YCSB.
@@ -310,12 +309,12 @@ public class Couchbase2Client extends DB {
   public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
 
     try {
-      Pair<String, String> inserDocPair = gen.getInsertDocument();
+      //Pair<String, String> inserDocPair = gen.getInsertDocument();
 
       if (kv) {
-        return soeInsertKv(inserDocPair.getKey(), inserDocPair.getValue());
+        return soeInsertKv(gen);
       } else {
-        return soeInsertN1ql(inserDocPair.getKey(), inserDocPair.getValue());
+        return soeInsertN1ql(gen);
       }
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -323,12 +322,12 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  private Status soeInsertKv(final String docId, final String docBody) {
+  private Status soeInsertKv(Generator gen) {
     int tries = 60; // roughly 60 seconds with the 1 second sleep, not 100% accurate.
     for(int i = 0; i < tries; i++) {
       try {
         waitForMutationResponse(bucket.async().insert(
-            RawJsonDocument.create(docId, documentExpiry, docBody),
+            RawJsonDocument.create(gen.getPredicate().getDocid(), documentExpiry, gen.getPredicate().getValueA()),
             persistTo,
             replicateTo
         ));
@@ -345,12 +344,12 @@ public class Couchbase2Client extends DB {
         "Check your server.");
   }
 
-  private Status soeInsertN1ql(final String docId, final String docBody)
+  private Status soeInsertN1ql(Generator gen)
       throws Exception {
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeInsertN1qlQuery,
-        JsonArray.from(docId, JsonObject.fromJson(docBody)),
+        JsonArray.from(gen.getPredicate().getDocid(), JsonObject.fromJson(gen.getPredicate().getValueA())),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
@@ -381,19 +380,22 @@ public class Couchbase2Client extends DB {
   private Status soeUpdateKv(Generator gen)  {
 
     waitForMutationResponse(bucket.async().replace(
-        RawJsonDocument.create(gen.getCustomerIdWithDistribution(), documentExpiry, gen.getInsertDocument().getValue()),
+        RawJsonDocument.create(gen.getCustomerIdWithDistribution(), documentExpiry, gen.getPredicate().getValueA()),
         persistTo,
         replicateTo
     ));
+
     return Status.OK;
   }
 
   private Status soeUpdateN1ql(Generator gen)
   throws Exception {
-    String updateQuery = "UPDATE `" + bucketName + "` USE KEYS [$1] SET " + gen.getPredicate().getName() + " = $2";
+    String updateQuery = "UPDATE `" + bucketName + "` USE KEYS [$1] SET " +
+        gen.getPredicate().getNestedPredicateA().getName() + " = $2";
+
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         updateQuery,
-        JsonArray.from(gen.getCustomerIdWithDistribution(), gen.getPredicate().getValueA()),
+        JsonArray.from(gen.getCustomerIdWithDistribution(), gen.getPredicate().getNestedPredicateA().getValueA()),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 

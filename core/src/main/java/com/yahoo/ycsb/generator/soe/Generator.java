@@ -3,11 +3,8 @@ package com.yahoo.ycsb.generator.soe;
 import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.workloads.soe.SoeQueryPredicate;
 import com.yahoo.ycsb.workloads.soe.SoeWorkload;
-import javafx.util.Pair;
-
 
 import java.util.*;
-
 import org.json.*;
 
 
@@ -42,7 +39,8 @@ public abstract class Generator {
 
   private SoeQueryPredicate soePredicate;
   private ArrayList<SoeQueryPredicate> soePredicatesSequence;
-  private Pair<String, String> insertDocument;
+
+  //private Pair<String, String> insertDocument;
 
   public static final String SOE_DOCUMENT_PREFIX_CUSTOMER = "customer";
   public static final String SOE_DOCUMENT_PREFIX_ORDER = "order";
@@ -258,9 +256,11 @@ public abstract class Generator {
     }
   }
 
+  /*
   public Pair<String, String> getInsertDocument() {
     return insertDocument;
   }
+ */
 
   public SoeQueryPredicate getPredicate() {
     return soePredicate;
@@ -275,16 +275,20 @@ public abstract class Generator {
     String docBody = getVal(storageKey);
     String keyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
     int docCounter = increment(keyPrefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
-    String docKey = keyPrefix + docCounter;
-    insertDocument = new Pair<String, String>(docKey, docBody);
+
+    soePredicate = new SoeQueryPredicate();
+    soePredicate.setDocid(keyPrefix + docCounter);
+    soePredicate.setValueA(docBody);
 
   }
 
   // building value as random to make sure the original value is overwritten with new one
   public void buildUpdatePredicate() {
-    soePredicate = new SoeQueryPredicate();
-    soePredicate.setName(SOE_FIELD_CUSTOMER_BALLANCE);
-    soePredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
+    buildInsertDocument();
+    SoeQueryPredicate queryPredicate = new SoeQueryPredicate();
+    queryPredicate.setName(SOE_FIELD_CUSTOMER_BALLANCE);
+    queryPredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
+    soePredicate.setNestedPredicateA(queryPredicate);
   }
 
   public void buildPagePredicate() {

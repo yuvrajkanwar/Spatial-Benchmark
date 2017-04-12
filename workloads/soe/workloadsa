@@ -37,17 +37,17 @@ insertproportion=0
 
 # Workload settings for soe
 
-soe_insert=0
-soe_update=0
-soe_read=0
-soe_scan=0
-soe_page=0
-soe_search=0
-soe_nestscan=0
-soe_arrayscan=0
-soe_arraydeepscan=0
-soe_report=0
-soe_report2=1
+soe_insert=0.1
+soe_update=0.1
+soe_read=0.1
+soe_scan=0.1
+soe_page=0.1
+soe_search=0.1
+soe_nestscan=0.1
+soe_arrayscan=0.1
+soe_arraydeepscan=0.1
+soe_report=0.05
+soe_report2=0.05
 
 # zipfian, uniform
 soe_request_distribution=zipfian
