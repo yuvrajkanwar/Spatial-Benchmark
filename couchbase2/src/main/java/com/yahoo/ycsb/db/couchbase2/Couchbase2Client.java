@@ -261,7 +261,7 @@ public class Couchbase2Client extends DB {
   public Status soeLoad(Generator generator) {
 
     try {
-      String docId = generator.getRandomCustomerId();
+      String docId = generator.getCustomerIdRandom();
       RawJsonDocument doc = bucket.get(docId, RawJsonDocument.class);
       if (doc != null) {
         generator.putCustomerDocument(docId, doc.content().toString());
@@ -311,6 +311,7 @@ public class Couchbase2Client extends DB {
 
     try {
       Pair<String, String> inserDocPair = gen.getInsertDocument();
+
       if (kv) {
         return soeInsertKv(inserDocPair.getKey(), inserDocPair.getValue());
       } else {
@@ -349,7 +350,7 @@ public class Couchbase2Client extends DB {
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeInsertN1qlQuery,
-        JsonArray.from(docId, docBody),
+        JsonArray.from(docId, JsonObject.fromJson(docBody)),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
@@ -380,7 +381,7 @@ public class Couchbase2Client extends DB {
   private Status soeUpdateKv(Generator gen)  {
 
     waitForMutationResponse(bucket.async().replace(
-        RawJsonDocument.create(gen.getRandomCustomerId(), documentExpiry, gen.getInsertDocument().getValue()),
+        RawJsonDocument.create(gen.getCustomerIdWithDistribution(), documentExpiry, gen.getInsertDocument().getValue()),
         persistTo,
         replicateTo
     ));
@@ -392,13 +393,13 @@ public class Couchbase2Client extends DB {
     String updateQuery = "UPDATE `" + bucketName + "` USE KEYS [$1] SET " + gen.getPredicate().getName() + " = $2";
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         updateQuery,
-        JsonArray.from(gen.getRandomCustomerId(), gen.getPredicate().getValueA()),
+        JsonArray.from(gen.getCustomerIdWithDistribution(), gen.getPredicate().getValueA()),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
     if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
-      throw new DBException("Error while parsing N1QL Result. Query: " + updateQuery
-          + ", Errors: " + queryResult.errors());
+      System.err.println("Error while parsing N1QL Result:" +  queryResult.errors());
+      return Status.ERROR;
     }
     return Status.OK;
   }
@@ -421,7 +422,7 @@ public class Couchbase2Client extends DB {
 
   private Status soeReadKv(HashMap<String, ByteIterator> result, Generator gen)
       throws Exception {
-    RawJsonDocument loaded = bucket.get(gen.getRandomCustomerId(), RawJsonDocument.class);
+    RawJsonDocument loaded = bucket.get(gen.getCustomerIdWithDistribution(), RawJsonDocument.class);
     if (loaded == null) {
       return Status.NOT_FOUND;
     }
@@ -433,7 +434,7 @@ public class Couchbase2Client extends DB {
       throws Exception {
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeReadN1qlQuery,
-        JsonArray.from(gen.getRandomCustomerId()),
+        JsonArray.from(gen.getCustomerIdWithDistribution()),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
@@ -487,7 +488,7 @@ public class Couchbase2Client extends DB {
     bucket.async()
         .query(N1qlQuery.parameterized(
             soeScanKVQuery,
-            JsonArray.from(gen.getRandomCustomerId(), recordcount),
+            JsonArray.from(gen.getCustomerIdWithDistribution(), recordcount),
             N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
         ))
         .doOnNext(new Action1<AsyncN1qlQueryResult>() {
@@ -539,7 +540,7 @@ public class Couchbase2Client extends DB {
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeScanN1qlQuery,
-        JsonArray.from(gen.getRandomCustomerId(), recordcount),
+        JsonArray.from(gen.getCustomerIdWithDistribution(), recordcount),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
@@ -1155,7 +1156,7 @@ public class Couchbase2Client extends DB {
   }
 
 
-  // *********************  SOE Report  ********************************
+  // *********************  SOE Report 2  ********************************
 
   @Override
   public Status soeReport2(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
@@ -1189,11 +1190,10 @@ public class Couchbase2Client extends DB {
         gen.getPredicatesSequence().get(0).getName() + ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
         gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o." +
         gen.getPredicatesSequence().get(1).getName() + ")";
-    /*
+
     System.out.println(soeReport2N1qlQuery);
     System.out.println(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA());
     System.out.println(gen.getPredicatesSequence().get(0).getValueA());
-    */
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeReport2N1qlQuery,

@@ -1,6 +1,7 @@
 package com.yahoo.ycsb.generator.soe;
 
 
+import com.yahoo.ycsb.workloads.CoreWorkload;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.internal.OperationFuture;
 
@@ -34,10 +35,12 @@ public class MemcachedGenerator extends Generator {
       if (client.get(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT) == null){
         client.add(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT, 0, totalDocs);
       }
+      int insertOffset = Integer.parseInt(p.getProperty(CoreWorkload.INSERT_START_PROPERTY,
+          CoreWorkload.INSERT_START_PROPERTY_DEFAULT));
 
       if (client.get(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER) == null) {
         client.add(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 0,
-            String.valueOf(Integer.parseInt(totalDocs) + 1));
+            String.valueOf(Integer.parseInt(totalDocs) + 1 + insertOffset));
       }
 
       if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER) == null) {

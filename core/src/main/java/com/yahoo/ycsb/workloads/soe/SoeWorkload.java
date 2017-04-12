@@ -68,7 +68,6 @@ public class SoeWorkload extends CoreWorkload {
   public static final String SOE_SYNC_PROPORTION_PROPERTY_DEFAULT = "0.00";
 
 
-
   public static final String SOE_QUERY_LIMIT_MIN = "soe_querylimit_min";
   public static final String SOE_QUERY_LIMIT_MIN_DEFAULT = "10";
   public static final String SOE_QUERY_LIMIT_MAX = "soe_querylimit_max";
@@ -78,6 +77,8 @@ public class SoeWorkload extends CoreWorkload {
   public static final String SOE_QUERY_OFFSET_MIN_DEFAULT = "10";
   public static final String SOE_QUERY_OFFSET_MAX = "soe_offset_max";
   public static final String SOE_QUERY_OFFSET_MAX_DEFAULT = "100";
+  public static final String SOE_REQUEST_DISTRIBUTION = "soe_request_distribution";
+  public static final String SOE_REQUEST_DISTRIBUTION_DEFAULT = "uniform";
 
 
   @Override

@@ -1,5 +1,6 @@
 package com.yahoo.ycsb.generator.soe;
 
+import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.workloads.soe.SoeQueryPredicate;
 import com.yahoo.ycsb.workloads.soe.SoeWorkload;
 import javafx.util.Pair;
@@ -34,6 +35,8 @@ public abstract class Generator {
   private int queryOffsetMin = 0;
   private int queryOffsetMax = 0;
 
+  private boolean isZipfian = false;
+  private ZipfianGenerator zipfianGenerator = null;
 
 
 
@@ -144,15 +147,11 @@ public abstract class Generator {
     }};
 
 
-
-
-
   protected abstract void setVal(String key, String value);
 
   protected abstract String getVal(String key);
 
   protected abstract int increment(String key, int step);
-
 
   public Generator(Properties p) {
     properties = p;
@@ -178,9 +177,11 @@ public abstract class Generator {
     }
 
 
+    isZipfian = p.getProperty(SoeWorkload.SOE_REQUEST_DISTRIBUTION,
+        SoeWorkload.SOE_REQUEST_DISTRIBUTION_DEFAULT).equals("zipfian");
+
+
   }
-
-
 
   public final Set<String> getAllFields() {
     return allFields;
@@ -265,27 +266,26 @@ public abstract class Generator {
     return soePredicate;
   }
 
-
   public ArrayList<SoeQueryPredicate> getPredicatesSequence() {
     return soePredicatesSequence;
   }
 
-
   public void buildInsertDocument() {
-    String docBody = getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC));
+    String storageKey = buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC);
+    String docBody = getVal(storageKey);
     String keyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
     int docCounter = increment(keyPrefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
-    String docKey = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + docCounter;
+    String docKey = keyPrefix + docCounter;
     insertDocument = new Pair<String, String>(docKey, docBody);
+
   }
 
-
+  // building value as random to make sure the original value is overwritten with new one
   public void buildUpdatePredicate() {
     soePredicate = new SoeQueryPredicate();
     soePredicate.setName(SOE_FIELD_CUSTOMER_BALLANCE);
     soePredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
   }
-
 
   public void buildPagePredicate() {
     soePredicate = new SoeQueryPredicate();
@@ -297,7 +297,6 @@ public abstract class Generator {
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP)));
     soePredicate.setNestedPredicateA(innerPredicate);
   }
-
 
   public void buildSearchPredicatesSequenceN3() {
     SoeQueryPredicate predicate;
@@ -326,7 +325,6 @@ public abstract class Generator {
 
   }
 
-
   public void buildNestedScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
@@ -341,7 +339,6 @@ public abstract class Generator {
     soePredicate = predicate;
   }
 
-
   public void buildArrayScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_DEVICES);
@@ -349,17 +346,12 @@ public abstract class Generator {
     soePredicate = predicate;
   }
 
-
   public void buildArrayDeepScanPredicate() {
     SoeQueryPredicate predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_VISITEDPLACES);
 
-    if (storedDocsCountCustomer == 0) {
-      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
-    }
+    int storageKeyOffset = (isZipfian)? getNumberZipfianUnifrom() : getNumberRandom(getStoredCustomersCount());
 
-    int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
     String storageKeyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
         SOE_FIELD_CUSTOMER_VISITEDPLACES + SOE_SYSTEMFIELD_DELIMITER;
 
@@ -379,13 +371,7 @@ public abstract class Generator {
 
   }
 
-
   public void buildReport1PredicateSequence() {
-
-    if (storedDocsCountCustomer == 0) {
-      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
-    }
 
     soePredicatesSequence = new ArrayList<>();
     SoeQueryPredicate predicate = new SoeQueryPredicate();
@@ -396,53 +382,42 @@ public abstract class Generator {
     predicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
     SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
     innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
-    int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
-    String storageKeyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-        SOE_FIELD_CUSTOMER_ADDRESS + SOE_SYSTEMFIELD_DELIMITER +
-        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER;
-    innerPredicate.setValueA(getVal(storageKeyPrefix + storageKeyOffset));
+    innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_ADDRESS,
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP)));
     predicate.setNestedPredicateA(innerPredicate);
     soePredicatesSequence.add(predicate);
   }
 
   public void buildReport2PredicateSequence() {
 
-    if (storedDocsCountCustomer == 0) {
-      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
-    }
-
-    if (storedDocsCountOrder == 0) {
-      storedDocsCountOrder = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER));
-    }
-
     soePredicatesSequence = new ArrayList<>();
 
-    //int storageKeyOffset = rand.nextInt(storedDocsCountOrder);
-    //int storageKeyOffset = rand.nextInt(storedDocsCountCustomer);
-
     String orderPrefix = SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
-    String customerPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
+    //String customerPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
 
     SoeQueryPredicate oDatePredicate = new SoeQueryPredicate();
     oDatePredicate.setName(SOE_FIELD_ORDER_MONTH);
     oDatePredicate.setValueA(getVal(orderPrefix + SOE_FIELD_ORDER_MONTH + SOE_SYSTEMFIELD_DELIMITER +
-        rand.nextInt(storedDocsCountOrder)));
+        getNumberRandom(getStoredOrdersCount())));
     soePredicatesSequence.add(oDatePredicate);
 
     SoeQueryPredicate oSalepricePredicate = new SoeQueryPredicate();
     oSalepricePredicate.setName(SOE_FIELD_ORDER_SALEPRICE);
     oSalepricePredicate.setValueA(getVal(orderPrefix + SOE_FIELD_ORDER_SALEPRICE + SOE_SYSTEMFIELD_DELIMITER +
-        rand.nextInt(storedDocsCountOrder)));
+        getNumberRandom(getStoredOrdersCount())));
     soePredicatesSequence.add(oSalepricePredicate);
 
     SoeQueryPredicate cAddressPredicate = new SoeQueryPredicate();
     cAddressPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
     SoeQueryPredicate cAddressZipPredicate = new SoeQueryPredicate();
     cAddressZipPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
+    /*
     cAddressZipPredicate.setValueA(getVal(customerPrefix + SOE_FIELD_CUSTOMER_ADDRESS + SOE_SYSTEMFIELD_DELIMITER +
-        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(storedDocsCountCustomer)));
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER +
+        getNumberRandom(get)
+        )));*/
+    cAddressZipPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_ADDRESS,
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP)));
     cAddressPredicate.setNestedPredicateA(cAddressZipPredicate);
     soePredicatesSequence.add(cAddressPredicate);
 
@@ -451,27 +426,22 @@ public abstract class Generator {
     soePredicatesSequence.add(cOrderList);
   }
 
-  /*
-  SELECT  o.sold_date, c.address.zip, SUM(o.sale_price)
-  FROM <bucket> c INNER JOIN <bucket> o ON KEYS c.order_list
-  WHERE c.address.zip = “value”
-  AND o.sold_date = “value”
-  GROUP BY c.sold_date, c.address.zip
-  ORDER BY SUM(o.sales_price)
-*/
-
-
   public void buildSyncPredicate() {
     // todo
   }
 
 
-  public String getRandomCustomerId() {
-    if (totalDocsCount == 0) {
-      totalDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_TOTALDOCS_COUNT));
+
+  public String getCustomerIdRandom() {
+    return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + getNumberRandom(getTotalcustomersCount());
+  }
+
+  public String getCustomerIdWithDistribution() {
+    if (isZipfian) {
+      return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          getNumberZipfianLatests(getTotalcustomersCount());
     }
-    return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(totalDocsCount);
+    return getCustomerIdRandom();
   }
 
   public int getRandomLimit(){
@@ -488,23 +458,14 @@ public abstract class Generator {
     }
     return rand.nextInt(queryOffsetMax - queryOffsetMin) + queryOffsetMin;
   }
-  
-  public String getRandomOrderId() {
-    if (totalDocsCount == 0) {
-      totalDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_TOTALDOCS_COUNT));
-    }
-    return SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(totalDocsCount);
-  }
-
 
   private String buildStorageKey(String token1) {
-    if (storedDocsCountCustomer == 0) {
-      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
-          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
+    if (isZipfian) {
+      return token1 + SOE_SYSTEMFIELD_DELIMITER + getNumberZipfianUnifrom();
     }
-    return token1 + SOE_SYSTEMFIELD_DELIMITER + rand.nextInt(storedDocsCountCustomer);
+    return token1 + SOE_SYSTEMFIELD_DELIMITER + getNumberRandom(getStoredCustomersCount());
   }
+
 
   private String buildStorageKey(String token1, String token2) {
     return token1 + SOE_SYSTEMFIELD_DELIMITER + buildStorageKey(token2);
@@ -521,6 +482,7 @@ public abstract class Generator {
   private String buildStorageKey(String token1, String token2, String token3, String token4, String token5) {
     return token1 + SOE_SYSTEMFIELD_DELIMITER + buildStorageKey(token2, token3, token4, token5);
   }
+
 
 
   private HashMap<String, String> tokenize(String jsonString) {
@@ -550,7 +512,6 @@ public abstract class Generator {
 
     return tokens;
   }
-
 
   private HashMap<String, String>  tokenizeOrderFields(String jsonString) {
     HashMap<String, String> tokens = new HashMap<String, String>();
@@ -801,4 +762,49 @@ public abstract class Generator {
       }
     }
   }
+
+  private int getStoredCustomersCount() {
+    if (storedDocsCountCustomer == 0) {
+      storedDocsCountCustomer = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER));
+    }
+    return storedDocsCountCustomer;
+  }
+
+  private int getTotalcustomersCount() {
+    if (totalDocsCount == 0) {
+      totalDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_TOTALDOCS_COUNT));
+    }
+    return totalDocsCount;
+  }
+
+  private int getStoredOrdersCount(){
+    if (storedDocsCountOrder == 0) {
+      storedDocsCountOrder = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER +
+          SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER));
+    }
+    return storedDocsCountOrder;
+  }
+
+
+  private int getNumberZipfianUnifrom() {
+    if (zipfianGenerator == null) {
+      zipfianGenerator = new ZipfianGenerator(1L, Long.valueOf(getStoredCustomersCount()-1).longValue());
+    }
+    return  zipfianGenerator.nextValue().intValue();
+  }
+
+
+  private int getNumberZipfianLatests(int totalItems) {
+    if (zipfianGenerator == null) {
+      zipfianGenerator = new ZipfianGenerator(1L, Long.valueOf(getStoredCustomersCount()-1).longValue());
+    }
+    return  totalItems - zipfianGenerator.nextValue().intValue();
+  }
+
+  private int getNumberRandom(int limit) {
+    return rand.nextInt(limit);
+  }
+
 }
