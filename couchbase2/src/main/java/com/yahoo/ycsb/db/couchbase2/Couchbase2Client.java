@@ -400,7 +400,7 @@ public class Couchbase2Client extends DB {
     ));
 
     if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
-      System.err.println("Error while parsing N1QL Result:" +  queryResult.errors());
+      //System.err.println("Error while parsing N1QL Result:" +  queryResult.errors());
       return Status.ERROR;
     }
     return Status.OK;
