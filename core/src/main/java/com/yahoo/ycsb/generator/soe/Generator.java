@@ -323,10 +323,15 @@ public abstract class Generator {
 
     predicate = new SoeQueryPredicate();
     predicate.setName(SOE_FIELD_CUSTOMER_DOB);
-    predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
-        SOE_FIELD_CUSTOMER_DOB)).split("-")[0]);
+    String dob = getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+        SOE_FIELD_CUSTOMER_DOB));
+    try {
+      predicate.setValueA(dob.split("-")[0]);
+    } catch (Exception e) {
+      System.err.println("failed to get year out of DOB" + e.getMessage());
+      predicate.setValueA("2017");
+    }
     soePredicatesSequence.add(predicate);
-
   }
 
   public void buildNestedScanPredicate() {
@@ -397,7 +402,6 @@ public abstract class Generator {
     soePredicatesSequence = new ArrayList<>();
 
     String orderPrefix = SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
-    //String customerPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
 
     SoeQueryPredicate oDatePredicate = new SoeQueryPredicate();
     oDatePredicate.setName(SOE_FIELD_ORDER_MONTH);
@@ -415,11 +419,7 @@ public abstract class Generator {
     cAddressPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
     SoeQueryPredicate cAddressZipPredicate = new SoeQueryPredicate();
     cAddressZipPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP);
-    /*
-    cAddressZipPredicate.setValueA(getVal(customerPrefix + SOE_FIELD_CUSTOMER_ADDRESS + SOE_SYSTEMFIELD_DELIMITER +
-        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP + SOE_SYSTEMFIELD_DELIMITER +
-        getNumberRandom(get)
-        )));*/
+
     cAddressZipPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_ADDRESS,
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP)));
     cAddressPredicate.setNestedPredicateA(cAddressZipPredicate);
