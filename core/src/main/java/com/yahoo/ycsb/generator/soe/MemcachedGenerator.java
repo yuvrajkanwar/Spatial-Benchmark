@@ -84,7 +84,8 @@ public class MemcachedGenerator extends Generator {
     try {
       return client.get(key).toString();
     } catch (Exception e) {
-      return null;
+      System.err.println("Error getting value by key <" + key + ">" + e.getMessage());
+      return "";
     }
   }
 
