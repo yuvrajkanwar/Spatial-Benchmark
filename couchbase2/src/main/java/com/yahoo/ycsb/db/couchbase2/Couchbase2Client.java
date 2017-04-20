@@ -1026,17 +1026,27 @@ public class Couchbase2Client extends DB {
   private Status soeArrayDeepScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
+
+
+
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-    String soeArrayDeepScanKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v in " +
-        gen.getPredicate().getName() + " SATISFIES v." +
-        gen.getPredicate().getNestedPredicateA().getName() + " = $1 AND ANY c in v." +
-        gen.getPredicate().getNestedPredicateB().getName() + " SATISFIES c = $2 END END ORDER BY meta().id LIMIT $3";
+
+
+    String visitedPlacesFieldName = gen.getPredicate().getName();
+    String countryFieldName = gen.getPredicate().getNestedPredicateA().getName();
+    String cityFieldName = gen.getPredicate().getNestedPredicateB().getName();
+
+    String cityCountryValue = gen.getPredicate().getNestedPredicateA().getValueA() + "." +
+        gen.getPredicate().getNestedPredicateB().getValueA();
+
+    String soeArrayDeepScanKvQuery =  "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN "
+        + visitedPlacesFieldName + " SATISFIES  ANY c IN v." + cityFieldName + " SATISFIES (v."
+        + countryFieldName + " || \".\" || c) = $1  END END  ORDER BY META().id LIMIT $2";
 
     bucket.async()
         .query(N1qlQuery.parameterized(
             soeArrayDeepScanKvQuery,
-            JsonArray.from(gen.getPredicate().getNestedPredicateA().getValueA(),
-                gen.getPredicate().getNestedPredicateB().getValueA(), recordcount),
+            JsonArray.from(cityCountryValue, recordcount),
             N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
         ))
         .doOnNext(new Action1<AsyncN1qlQueryResult>() {
@@ -1085,15 +1095,20 @@ public class Couchbase2Client extends DB {
   private Status soeArrayDeepScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
-    String soeArrayDeepScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE ANY v in " +
-        gen.getPredicate().getName() + " SATISFIES v." +
-        gen.getPredicate().getNestedPredicateA().getName() + " = $1 AND ANY c in v." +
-        gen.getPredicate().getNestedPredicateB().getName() + " SATISFIES c = $2 END END ORDER BY meta().id LIMIT $3";
+    String visitedPlacesFieldName = gen.getPredicate().getName();
+    String countryFieldName = gen.getPredicate().getNestedPredicateA().getName();
+    String cityFieldName = gen.getPredicate().getNestedPredicateB().getName();
+
+    String cityCountryValue = gen.getPredicate().getNestedPredicateA().getValueA() + "." +
+        gen.getPredicate().getNestedPredicateB().getValueA();
+
+    String soeArrayDeepScanN1qlQuery =  "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN "
+        + visitedPlacesFieldName + " SATISFIES  ANY c IN v." + cityFieldName + " SATISFIES (v."
+        + countryFieldName + " || \".\" || c) = $1  END END  ORDER BY META().id LIMIT $2";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeArrayDeepScanN1qlQuery,
-        JsonArray.from(gen.getPredicate().getNestedPredicateA().getValueA(),
-            gen.getPredicate().getNestedPredicateB().getValueA(), recordcount),
+        JsonArray.from(cityCountryValue, recordcount),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
 
@@ -1192,11 +1207,7 @@ public class Couchbase2Client extends DB {
         gen.getPredicatesSequence().get(0).getName() + ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
         gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o." +
         gen.getPredicatesSequence().get(1).getName() + ")";
-  /*
-    System.out.println(soeReport2N1qlQuery);
-    System.out.println(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA());
-    System.out.println(gen.getPredicatesSequence().get(0).getValueA());
-*/
+
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeReport2N1qlQuery,
         JsonArray.from(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA(),
