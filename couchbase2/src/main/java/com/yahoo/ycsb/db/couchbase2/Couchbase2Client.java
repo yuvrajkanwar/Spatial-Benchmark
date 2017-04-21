@@ -1155,8 +1155,8 @@ public class Couchbase2Client extends DB {
 
   private Status soeReport1N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-    String soeReport1N1qlQuery = "SELECT * FROM `" +  bucketName + "` c INNER JOIN `" +  bucketName + "` o " +
-        "ON KEYS c." + gen.getPredicatesSequence().get(0).getName() + " WHERE c." +
+    String soeReport1N1qlQuery = "SELECT * FROM `" +  bucketName + "` c1 INNER JOIN `" +  bucketName + "` o1 " +
+        "ON KEYS c1." + gen.getPredicatesSequence().get(0).getName() + " WHERE c1." +
         gen.getPredicatesSequence().get(1).getName() + "." +
         gen.getPredicatesSequence().get(1).getNestedPredicateA().getName()+ " = $1 ";
 
@@ -1196,16 +1196,16 @@ public class Couchbase2Client extends DB {
 
   private Status soeReport2N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-    String soeReport2N1qlQuery = "SELECT o." + gen.getPredicatesSequence().get(0).getName() +
-        ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
-        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + ", SUM(o." +
+    String soeReport2N1qlQuery = "SELECT o2." + gen.getPredicatesSequence().get(0).getName() +
+        ", c2." + gen.getPredicatesSequence().get(2).getName() + "." +
+        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + ", SUM(o2." +
         gen.getPredicatesSequence().get(1).getName() + ") FROM `" +  bucketName
-        + "` c INNER JOIN `" +  bucketName + "` o ON KEYS c." + gen.getPredicatesSequence().get(3).getName() +
-        " WHERE c." + gen.getPredicatesSequence().get(2).getName() + "."
-        + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " = $1 AND o." +
-        gen.getPredicatesSequence().get(0).getName() + " = $2 GROUP BY o." +
-        gen.getPredicatesSequence().get(0).getName() + ", c." + gen.getPredicatesSequence().get(2).getName() + "." +
-        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o." +
+        + "` c2 INNER JOIN `" +  bucketName + "` o2 ON KEYS c2." + gen.getPredicatesSequence().get(3).getName() +
+        " WHERE c2." + gen.getPredicatesSequence().get(2).getName() + "."
+        + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " = $1 AND o2." +
+        gen.getPredicatesSequence().get(0).getName() + " = $2 GROUP BY o2." +
+        gen.getPredicatesSequence().get(0).getName() + ", c2." + gen.getPredicatesSequence().get(2).getName() + "." +
+        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o2." +
         gen.getPredicatesSequence().get(1).getName() + ")";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
