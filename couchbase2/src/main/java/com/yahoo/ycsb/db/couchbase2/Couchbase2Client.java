@@ -1148,8 +1148,7 @@ public class Couchbase2Client extends DB {
   }
 
   private Status soeReport1Kv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
-    System.err.println("Not implemented");
-    return Status.OK;
+    return soeReport1N1ql(result, gen);
   }
 
 
@@ -1190,8 +1189,7 @@ public class Couchbase2Client extends DB {
   }
 
   private Status soeReport2Kv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
-    System.err.println("Not implemented");
-    return Status.OK;
+    return soeReport2N1ql(result, gen);
   }
 
   private Status soeReport2N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
