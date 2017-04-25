@@ -43,6 +43,7 @@ import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 
+import com.yahoo.ycsb.generator.soe.Generator;
 import org.bson.Document;
 import org.bson.types.Binary;
 
@@ -131,6 +132,59 @@ public class MongoDbClient extends DB {
       }
     }
   }
+
+
+
+
+  /*
+       ================    SOE operations  ======================
+   */
+
+
+  @Override
+  public Status soeLoad(String table, Generator generator) {
+
+    try {
+      String key = generator.getCustomerIdRandom();
+      MongoCollection<Document> collection = database.getCollection(table);
+      Document query = new Document("_id", key);
+      FindIterable<Document> findIterable = collection.find(query);
+      Document queryResult = findIterable.first();
+      if (queryResult == null) {
+        return Status.ERROR;
+      }
+      generator.putCustomerDocument(key, queryResult.toJson());
+      List<String> orders = (List<String>) queryResult.get(Generator.SOE_FIELD_CUSTOMER_ORDER_LIST);
+      for (String order:orders) {
+        query = new Document("_id", order);
+        findIterable = collection.find(query);
+        queryResult = findIterable.first();
+        if (queryResult == null) {
+          return Status.ERROR;
+        }
+        generator.putOrderDocument(order, queryResult.toJson());
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+    }
+    return Status.ERROR;
+  }
+
+
+  // *********************  SOE Insert ********************************
+
+  @Override
+  public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+
+
+    return null;
+  }
+
+
+
+
+
 
   /**
    * Delete a record from the database.

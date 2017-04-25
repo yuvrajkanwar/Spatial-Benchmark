@@ -279,11 +279,11 @@ public class DBWrapper extends DB {
    * @return
    */
 
-  public Status soeLoad(Generator generator) {
+  public Status soeLoad(String table, Generator generator) {
     try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.soeLoad(generator);
+      Status res = db.soeLoad(table, generator);
       long en = System.nanoTime();
       measure("SOE_LOAD", res, ist, st, en);
       measurements.reportStatus("SOE_LOAD", res);

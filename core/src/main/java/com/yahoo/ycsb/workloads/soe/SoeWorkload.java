@@ -104,7 +104,7 @@ public class SoeWorkload extends CoreWorkload {
   @Override
   public boolean doInsert(DB db, Object threadstate) {
     Status status;
-    status = db.soeLoad((MemcachedGenerator) threadstate);
+    status = db.soeLoad(table, (MemcachedGenerator) threadstate);
     return null != status && status.isOk();
   }
 

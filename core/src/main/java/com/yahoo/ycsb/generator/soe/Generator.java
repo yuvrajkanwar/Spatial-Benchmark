@@ -35,12 +35,9 @@ public abstract class Generator {
   private boolean isZipfian = false;
   private ZipfianGenerator zipfianGenerator = null;
 
-
-
   private SoeQueryPredicate soePredicate;
   private ArrayList<SoeQueryPredicate> soePredicatesSequence;
 
-  //private Pair<String, String> insertDocument;
 
   public static final String SOE_DOCUMENT_PREFIX_CUSTOMER = "customer";
   public static final String SOE_DOCUMENT_PREFIX_ORDER = "order";

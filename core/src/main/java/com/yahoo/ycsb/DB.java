@@ -144,7 +144,7 @@ public abstract class DB {
    */
 
   // overloading the standard "insert" operation as it used by YCSB for loading data
-  public Status soeLoad(Generator generator) {
+  public Status soeLoad(String table, Generator generator) {
     return null;
   }
 

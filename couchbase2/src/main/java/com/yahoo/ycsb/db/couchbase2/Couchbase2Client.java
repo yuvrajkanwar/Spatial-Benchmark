@@ -257,7 +257,7 @@ public class Couchbase2Client extends DB {
 
 
   @Override
-  public Status soeLoad(Generator generator) {
+  public Status soeLoad(String table, Generator generator) {
 
     try {
       String docId = generator.getCustomerIdRandom();
