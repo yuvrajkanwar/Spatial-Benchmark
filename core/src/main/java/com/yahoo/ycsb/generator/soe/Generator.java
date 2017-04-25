@@ -174,11 +174,8 @@ public abstract class Generator {
       queryOffsetMin = buff;
     }
 
-
     isZipfian = p.getProperty(SoeWorkload.SOE_REQUEST_DISTRIBUTION,
         SoeWorkload.SOE_REQUEST_DISTRIBUTION_DEFAULT).equals("zipfian");
-
-
   }
 
   public final Set<String> getAllFields() {
@@ -256,11 +253,6 @@ public abstract class Generator {
     }
   }
 
-  /*
-  public Pair<String, String> getInsertDocument() {
-    return insertDocument;
-  }
- */
 
   public SoeQueryPredicate getPredicate() {
     return soePredicate;
