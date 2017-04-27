@@ -174,10 +174,10 @@ public class Couchbase2Client extends DB {
         + "`(KEY,VALUE) VALUES ($1,$2)";
 
     soeScanN1qlQuery =  soeQuerySelectAllClause + " `" + bucketName +
-        "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
+        "` WHERE meta().id >= $1 ORDER BY meta().id LIMIT $2";
 
     soeScanKVQuery =  soeQuerySelectIDClause + " `" + bucketName +
-        "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
+        "` WHERE meta().id >= $1 ORDER BY meta().id LIMIT $2";
 
     try {
       synchronized (INIT_COORDINATOR) {
