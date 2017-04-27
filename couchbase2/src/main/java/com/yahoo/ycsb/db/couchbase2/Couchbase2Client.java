@@ -129,6 +129,8 @@ public class Couchbase2Client extends DB {
   private int boost;
   private int networkMetricsInterval;
   private int runtimeMetricsInterval;
+  private String soeQuerySelectIDClause;
+  private String soeQuerySelectAllClause;
   private String scanAllQuery;
   private String soeScanN1qlQuery;
   private String soeScanKVQuery;
@@ -163,10 +165,19 @@ public class Couchbase2Client extends DB {
     scanAllQuery =  "SELECT RAW meta().id FROM `" + bucketName +
       "` WHERE meta().id >= '$1' ORDER BY meta().id LIMIT $2";
 
-    soeReadN1qlQuery = "SELECT * FROM `" + bucketName + "` USE KEYS [$1]";
-    soeInsertN1qlQuery = "INSERT INTO `" + bucketName + "`(KEY,VALUE) VALUES ($1,$2)";
-    soeScanN1qlQuery =  "SELECT * FROM `" + bucketName + "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
-    soeScanKVQuery =  "SELECT meta().id FROM `" + bucketName + "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
+    soeQuerySelectIDClause = "SELECT RAW meta().id FROM";
+    soeQuerySelectAllClause = "SELECT * FROM "; // bucket?
+
+    soeReadN1qlQuery = soeQuerySelectAllClause + " `" + bucketName + "` USE KEYS [$1]";
+
+    soeInsertN1qlQuery = "INSERT INTO `" + bucketName
+        + "`(KEY,VALUE) VALUES ($1,$2)";
+
+    soeScanN1qlQuery =  soeQuerySelectAllClause + " `" + bucketName +
+        "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
+
+    soeScanKVQuery =  soeQuerySelectIDClause + " `" + bucketName +
+        "` WHERE meta().id > $1 ORDER BY meta().id LIMIT $2";
 
     try {
       synchronized (INIT_COORDINATOR) {
@@ -486,11 +497,12 @@ public class Couchbase2Client extends DB {
 
   private Status soeScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
+    String key = gen.getCustomerIdWithDistribution();
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
     bucket.async()
         .query(N1qlQuery.parameterized(
             soeScanKVQuery,
-            JsonArray.from(gen.getCustomerIdWithDistribution(), recordcount),
+            JsonArray.from(key, recordcount),
             N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
         ))
         .doOnNext(new Action1<AsyncN1qlQueryResult>() {
@@ -586,7 +598,7 @@ public class Couchbase2Client extends DB {
     int offset = gen.getRandomOffset();
 
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-    String soeSearchKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE " +
+    String soeSearchKvQuery = soeQuerySelectIDClause + " `" +  bucketName + "` WHERE " +
         gen.getPredicatesSequence().get(0).getName() + "." +
         gen.getPredicatesSequence().get(0).getNestedPredicateA().getName() + "= $1 AND " +
         gen.getPredicatesSequence().get(1).getName() + " = $2 AND DATE_PART_STR(" +
@@ -651,7 +663,7 @@ public class Couchbase2Client extends DB {
     int recordcount = gen.getRandomLimit();
     int offset = gen.getRandomOffset();
 
-    String soeSearchN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE " +
+    String soeSearchN1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` WHERE " +
         gen.getPredicatesSequence().get(0).getName() + "." +
         gen.getPredicatesSequence().get(0).getNestedPredicateA().getName() + "= $1 AND " +
         gen.getPredicatesSequence().get(1).getName() + " = $2 AND DATE_PART_STR(" +
@@ -708,8 +720,8 @@ public class Couchbase2Client extends DB {
     int offset = gen.getRandomOffset();
 
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-    String soePageKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE " + gen.getPredicate().getName() + "." +
-        gen.getPredicate().getNestedPredicateA().getName() + " = $1 OFFSET $2 LIMIT $3";
+    String soePageKvQuery = soeQuerySelectIDClause + " `" +  bucketName + "` WHERE " + gen.getPredicate().getName() +
+        "." + gen.getPredicate().getNestedPredicateA().getName() + " = $1 OFFSET $2 LIMIT $3";
 
     bucket.async()
         .query(N1qlQuery.parameterized(
@@ -765,8 +777,9 @@ public class Couchbase2Client extends DB {
     int recordcount = gen.getRandomLimit();
     int offset = gen.getRandomOffset();
 
-    String soePageN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE " + gen.getPredicate().getName() + "." +
-        gen.getPredicate().getNestedPredicateA().getName() + " = $1 OFFSET $2 LIMIT $3";
+    String soePageN1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` WHERE " +
+        gen.getPredicate().getName() + "." + gen.getPredicate().getNestedPredicateA().getName() +
+        " = $1 OFFSET $2 LIMIT $3";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soePageN1qlQuery,
@@ -813,7 +826,7 @@ public class Couchbase2Client extends DB {
     int recordcount = gen.getRandomLimit();
 
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-    String soeNestScanKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE " +
+    String soeNestScanKvQuery = soeQuerySelectIDClause + " `" +  bucketName + "` WHERE " +
         gen.getPredicate().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getName() + " = $1  LIMIT $2";
@@ -870,7 +883,7 @@ public class Couchbase2Client extends DB {
   private Status soeNestScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
     int recordcount = gen.getRandomLimit();
-    String soeNestScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE " +
+    String soeNestScanN1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` WHERE " +
         gen.getPredicate().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getName() + "." +
         gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getName() + " = $1  LIMIT $2";
@@ -921,7 +934,7 @@ public class Couchbase2Client extends DB {
     int recordcount = gen.getRandomLimit();
 
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-    String soeArrayScanKvQuery = "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN " +
+    String soeArrayScanKvQuery = soeQuerySelectIDClause + " `" +  bucketName + "` WHERE ANY v IN " +
         gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY " +
         gen.getPredicate().getName()  + " LIMIT $2";
 
@@ -977,7 +990,7 @@ public class Couchbase2Client extends DB {
   private Status soeArrayScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
-    String soeArrayScanN1qlQuery = "SELECT * FROM `" +  bucketName + "` WHERE ANY v IN " +
+    String soeArrayScanN1qlQuery = soeQuerySelectAllClause + "`" +  bucketName + "` WHERE ANY v IN " +
         gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY " +
         gen.getPredicate().getName()  + " LIMIT $2";
 
@@ -1026,12 +1039,7 @@ public class Couchbase2Client extends DB {
   private Status soeArrayDeepScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
-
-
-
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
-
-
     String visitedPlacesFieldName = gen.getPredicate().getName();
     String countryFieldName = gen.getPredicate().getNestedPredicateA().getName();
     String cityFieldName = gen.getPredicate().getNestedPredicateB().getName();
@@ -1039,7 +1047,7 @@ public class Couchbase2Client extends DB {
     String cityCountryValue = gen.getPredicate().getNestedPredicateA().getValueA() + "." +
         gen.getPredicate().getNestedPredicateB().getValueA();
 
-    String soeArrayDeepScanKvQuery =  "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN "
+    String soeArrayDeepScanKvQuery =  soeQuerySelectIDClause + " `" +  bucketName + "` WHERE ANY v IN "
         + visitedPlacesFieldName + " SATISFIES  ANY c IN v." + cityFieldName + " SATISFIES (v."
         + countryFieldName + " || \".\" || c) = $1  END END  ORDER BY META().id LIMIT $2";
 
@@ -1102,7 +1110,7 @@ public class Couchbase2Client extends DB {
     String cityCountryValue = gen.getPredicate().getNestedPredicateA().getValueA() + "." +
         gen.getPredicate().getNestedPredicateB().getValueA();
 
-    String soeArrayDeepScanN1qlQuery =  "SELECT meta().id FROM `" +  bucketName + "` WHERE ANY v IN "
+    String soeArrayDeepScanN1qlQuery =  soeQuerySelectAllClause + " `" +  bucketName + "` WHERE ANY v IN "
         + visitedPlacesFieldName + " SATISFIES  ANY c IN v." + cityFieldName + " SATISFIES (v."
         + countryFieldName + " || \".\" || c) = $1  END END  ORDER BY META().id LIMIT $2";
 
@@ -1154,8 +1162,8 @@ public class Couchbase2Client extends DB {
 
   private Status soeReport1N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-    String soeReport1N1qlQuery = "SELECT * FROM `" +  bucketName + "` c1 INNER JOIN `" +  bucketName + "` o1 " +
-        "ON KEYS c1." + gen.getPredicatesSequence().get(0).getName() + " WHERE c1." +
+    String soeReport1N1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` c1 INNER JOIN `" +
+        bucketName + "` o1 ON KEYS c1." + gen.getPredicatesSequence().get(0).getName() + " WHERE c1." +
         gen.getPredicatesSequence().get(1).getName() + "." +
         gen.getPredicatesSequence().get(1).getNestedPredicateA().getName()+ " = $1 ";
 
@@ -1202,8 +1210,8 @@ public class Couchbase2Client extends DB {
         " WHERE c2." + gen.getPredicatesSequence().get(2).getName() + "."
         + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " = $1 AND o2." +
         gen.getPredicatesSequence().get(0).getName() + " = $2 GROUP BY o2." +
-        gen.getPredicatesSequence().get(0).getName() + ", c2." + gen.getPredicatesSequence().get(2).getName() + "." +
-        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o2." +
+        gen.getPredicatesSequence().get(0).getName() + ", c2." + gen.getPredicatesSequence().get(2).getName() +
+        "." + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o2." +
         gen.getPredicatesSequence().get(1).getName() + ")";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
@@ -1332,6 +1340,7 @@ public class Couchbase2Client extends DB {
    * @return The result of the operation.
    */
   private Status updateKv(final String docId, final HashMap<String, ByteIterator> values) {
+
     waitForMutationResponse(bucket.async().replace(
         RawJsonDocument.create(docId, documentExpiry, encode(values)),
         persistTo,
@@ -1611,6 +1620,7 @@ public class Couchbase2Client extends DB {
           @Override
           public void call(AsyncN1qlQueryResult result) {
             if (!result.parseSuccess()) {
+
               throw new RuntimeException("Error while parsing N1QL Result. Query: " + scanAllQuery
                 + ", Errors: " + result.errors());
             }

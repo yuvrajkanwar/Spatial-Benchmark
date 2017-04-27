@@ -439,17 +439,17 @@ public abstract class Generator {
 
   public int getRandomLimit(){
     if (queryLimitMax == queryLimitMin) {
-      return rand.nextInt(queryLimitMin) + 1;
+      return queryLimitMax;
     }
-    return rand.nextInt(queryLimitMax - queryLimitMin) + queryLimitMin;
+    return rand.nextInt(queryLimitMax - queryLimitMin + 1) + queryLimitMin;
   }
 
   public int getRandomOffset(){
 
     if (queryOffsetMax == queryOffsetMin) {
-      return rand.nextInt(queryOffsetMin) + 1;
+      return queryOffsetMax;
     }
-    return rand.nextInt(queryOffsetMax - queryOffsetMin) + queryOffsetMin;
+    return rand.nextInt(queryOffsetMax - queryOffsetMin + 1) + queryOffsetMin;
   }
 
   private String buildStorageKey(String token1) {
@@ -781,6 +781,7 @@ public abstract class Generator {
   }
 
 
+
   private int getNumberZipfianUnifrom() {
     if (zipfianGenerator == null) {
       zipfianGenerator = new ZipfianGenerator(1L, Long.valueOf(getStoredCustomersCount()-1).longValue());
@@ -789,11 +790,12 @@ public abstract class Generator {
   }
 
 
+  //getting latest docId shifted back on (max limit + max offest) to ensure the query returns expected amount of results
   private int getNumberZipfianLatests(int totalItems) {
     if (zipfianGenerator == null) {
       zipfianGenerator = new ZipfianGenerator(1L, Long.valueOf(getStoredCustomersCount()-1).longValue());
     }
-    return  totalItems - zipfianGenerator.nextValue().intValue();
+    return  totalItems - zipfianGenerator.nextValue().intValue() - queryLimitMax - queryOffsetMax;
   }
 
   private int getNumberRandom(int limit) {
