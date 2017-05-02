@@ -166,7 +166,8 @@ public class Couchbase2Client extends DB {
       "` WHERE meta().id >= '$1' ORDER BY meta().id LIMIT $2";
 
     soeQuerySelectIDClause = "SELECT RAW meta().id FROM";
-    soeQuerySelectAllClause = "SELECT * FROM "; // bucket?
+    soeQuerySelectAllClause = "SELECT RAW `" + bucketName + "` FROM ";
+    //soeQuerySelectAllClause = "SELECT * FROM ";
 
     soeReadN1qlQuery = soeQuerySelectAllClause + " `" + bucketName + "` USE KEYS [$1]";
 
@@ -411,7 +412,6 @@ public class Couchbase2Client extends DB {
     ));
 
     if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
-      //System.err.println("Error while parsing N1QL Result:" +  queryResult.errors());
       return Status.ERROR;
     }
     return Status.OK;
@@ -439,7 +439,7 @@ public class Couchbase2Client extends DB {
     if (loaded == null) {
       return Status.NOT_FOUND;
     }
-    decode(loaded.content(), gen.getAllFields(), result);
+    soeDecode(loaded.content(), null, result);
     return Status.OK;
   }
 
@@ -474,7 +474,6 @@ public class Couchbase2Client extends DB {
       Object value = content.get(field);
       result.put(field, new StringByteIterator(value != null ? value.toString() : ""));
     }
-
     return Status.OK;
   }
 
@@ -531,7 +530,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -566,13 +565,9 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
-
     }
     return Status.OK;
   }
@@ -642,7 +637,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -653,7 +648,6 @@ public class Couchbase2Client extends DB {
             data.add(tuple);
           }
         });
-
     result.addAll(data);
     return Status.OK;
   }
@@ -688,13 +682,11 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
     }
+
     return Status.OK;
   }
 
@@ -755,7 +747,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -794,13 +786,9 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
-
     }
     return Status.OK;
   }
@@ -863,7 +851,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -881,7 +869,6 @@ public class Couchbase2Client extends DB {
 
 
   private Status soeNestScanN1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
-
     int recordcount = gen.getRandomLimit();
     String soeNestScanN1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` WHERE " +
         gen.getPredicate().getName() + "." +
@@ -901,14 +888,11 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
-
     }
+
     return Status.OK;
   }
 
@@ -929,14 +913,12 @@ public class Couchbase2Client extends DB {
     }
   }
 
-
   private Status soeArrayScanKv(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
 
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
     String soeArrayScanKvQuery = soeQuerySelectIDClause + " `" +  bucketName + "` WHERE ANY v IN " +
-        gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY " +
-        gen.getPredicate().getName()  + " LIMIT $2";
+        gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY meta().id LIMIT $2";
 
     bucket.async()
         .query(N1qlQuery.parameterized(
@@ -970,7 +952,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -991,9 +973,7 @@ public class Couchbase2Client extends DB {
     int recordcount = gen.getRandomLimit();
 
     String soeArrayScanN1qlQuery = soeQuerySelectAllClause + "`" +  bucketName + "` WHERE ANY v IN " +
-        gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY " +
-        gen.getPredicate().getName()  + " LIMIT $2";
-
+        gen.getPredicate().getName() + " SATISFIES v = $1 END ORDER BY meta().id LIMIT $2";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeArrayScanN1qlQuery,
@@ -1008,14 +988,11 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
-
     }
+
     return Status.OK;
   }
 
@@ -1083,7 +1060,7 @@ public class Couchbase2Client extends DB {
           @Override
           public HashMap<String, ByteIterator> call(RawJsonDocument document) {
             HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>();
-            decode(document.content(), null, tuple);
+            soeDecode(document.content(), null, tuple);
             return tuple;
           }
         })
@@ -1127,13 +1104,9 @@ public class Couchbase2Client extends DB {
     result.ensureCapacity(recordcount);
 
     for (N1qlQueryRow row : queryResult) {
-      JsonObject value = row.value();
       HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
-      for (String field : gen.getAllFields()) {
-        tuple.put(field, new StringByteIterator(value.getString(field)));
-      }
+      soeDecode(row.value().toString(), null, tuple);
       result.add(tuple);
-
     }
     return Status.OK;
   }
@@ -1162,7 +1135,7 @@ public class Couchbase2Client extends DB {
 
   private Status soeReport1N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-    String soeReport1N1qlQuery = soeQuerySelectAllClause + " `" +  bucketName + "` c1 INNER JOIN `" +
+    String soeReport1N1qlQuery = "SELECT * FROM `" +  bucketName + "` c1 INNER JOIN `" +
         bucketName + "` o1 ON KEYS c1." + gen.getPredicatesSequence().get(0).getName() + " WHERE c1." +
         gen.getPredicatesSequence().get(1).getName() + "." +
         gen.getPredicatesSequence().get(1).getNestedPredicateA().getName()+ " = $1 ";
@@ -1176,6 +1149,13 @@ public class Couchbase2Client extends DB {
       throw new RuntimeException("Error while parsing N1QL Result. Query: " + soeReport1N1qlQuery
           + ", Errors: " + queryResult.errors());
     }
+
+    for (N1qlQueryRow row : queryResult) {
+      HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
+      soeDecode(row.value().toString(), null, tuple);
+      result.add(tuple);
+    }
+
     return Status.OK;
   }
 
@@ -1202,22 +1182,23 @@ public class Couchbase2Client extends DB {
 
   private Status soeReport2N1ql(final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-    String soeReport2N1qlQuery = "SELECT o2." + gen.getPredicatesSequence().get(0).getName() +
-        ", c2." + gen.getPredicatesSequence().get(2).getName() + "." +
-        gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + ", SUM(o2." +
-        gen.getPredicatesSequence().get(1).getName() + ") FROM `" +  bucketName
-        + "` c2 INNER JOIN `" +  bucketName + "` o2 ON KEYS c2." + gen.getPredicatesSequence().get(3).getName() +
-        " WHERE c2." + gen.getPredicatesSequence().get(2).getName() + "."
-        + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " = $1 AND o2." +
-        gen.getPredicatesSequence().get(0).getName() + " = $2 GROUP BY o2." +
-        gen.getPredicatesSequence().get(0).getName() + ", c2." + gen.getPredicatesSequence().get(2).getName() +
-        "." + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName() + " ORDER BY SUM(o2." +
-        gen.getPredicatesSequence().get(1).getName() + ")";
+    String nameOrderMonth = gen.getPredicatesSequence().get(0).getName();
+    String nameOrderSaleprice = gen.getPredicatesSequence().get(1).getName();
+    String nameAddress =  gen.getPredicatesSequence().get(2).getName();
+    String nameAddressZip =  gen.getPredicatesSequence().get(2).getNestedPredicateA().getName();
+    String nameOrderlist = gen.getPredicatesSequence().get(3).getName();
+    String valueOrderMonth = gen.getPredicatesSequence().get(0).getValueA();
+    String valueAddressZip =  gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
+
+    String soeReport2N1qlQuery = "SELECT o2." + nameOrderMonth + ", c2." + nameAddress + "." + nameAddressZip +
+        ", SUM(o2." + nameOrderSaleprice + ") FROM `" +  bucketName  + "` c2 INNER JOIN `" +  bucketName +
+        "` o2 ON KEYS c2." + nameOrderlist + " WHERE c2." + nameAddress + "." + nameAddressZip +
+        " = $1 AND o2." + nameOrderMonth + " = $2 GROUP BY o2." + nameOrderMonth + ", c2." + nameAddress +
+        "." + nameAddressZip + " ORDER BY SUM(o2." + nameOrderSaleprice + ")";
 
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
         soeReport2N1qlQuery,
-        JsonArray.from(gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA(),
-            gen.getPredicatesSequence().get(0).getValueA()),
+        JsonArray.from(valueAddressZip, valueOrderMonth),
         N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
     ));
     if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
@@ -1225,11 +1206,15 @@ public class Couchbase2Client extends DB {
           + ", Errors: " + queryResult.errors());
     }
 
+    for (N1qlQueryRow row : queryResult) {
+      HashMap<String, ByteIterator> tuple = new HashMap<String, ByteIterator>(gen.getAllFields().size());
+      soeDecode(row.value().toString(), null, tuple);
+      result.add(tuple);
+    }
     return Status.OK;
   }
 
   // ************************************************************************************************
-
 
 
 
@@ -1894,6 +1879,34 @@ public class Couchbase2Client extends DB {
     }
     return writer.toString();
   }
+
+  /**
+   * handling rich JSON types by converting Json arrays and Json objects into String.
+   * @param source
+   * @param fields
+   * @param dest
+   */
+  private void soeDecode(final String source, final Set<String> fields,
+                         final HashMap<String, ByteIterator> dest) {
+    try {
+      JsonNode json = JacksonTransformers.MAPPER.readTree(source);
+      boolean checkFields = fields != null && !fields.isEmpty();
+      for (Iterator<Map.Entry<String, JsonNode>> jsonFields = json.fields(); jsonFields.hasNext();) {
+        Map.Entry<String, JsonNode> jsonField = jsonFields.next();
+        String name = jsonField.getKey();
+        if (checkFields && !fields.contains(name)) {
+          continue;
+        }
+        JsonNode jsonValue = jsonField.getValue();
+        if (jsonValue != null && !jsonValue.isNull()) {
+          dest.put(name, new StringByteIterator(jsonValue.toString()));
+        }
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Could not soe-decode JSON");
+    }
+  }
+
 }
 
 /**
