@@ -24,10 +24,7 @@
  */
 package com.yahoo.ycsb.db;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
-import com.mongodb.ReadPreference;
-import com.mongodb.WriteConcern;
+import com.mongodb.*;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -39,9 +36,11 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
+import com.yahoo.ycsb.StringByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
+import com.mongodb.util.JSON;
 
 import com.yahoo.ycsb.generator.soe.Generator;
 import org.bson.Document;
@@ -140,7 +139,6 @@ public class MongoDbClient extends DB {
        ================    SOE operations  ======================
    */
 
-
   @Override
   public Status soeLoad(String table, Generator generator) {
 
@@ -177,15 +175,137 @@ public class MongoDbClient extends DB {
   @Override
   public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
 
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+      String key = gen.getPredicate().getDocid();
+      String value = gen.getPredicate().getValueA();
+      Document toInsert = new Document("_id", key);
+      DBObject body = (DBObject) JSON.parse(value);
+      toInsert.put(key, body);
+      collection.insertOne(toInsert);
 
-    return null;
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println("Exception while trying bulk insert with "
+          + bulkInserts.size());
+      e.printStackTrace();
+      return Status.ERROR;
+    }
+
   }
 
 
 
+  // *********************  SOE Update ********************************
+
+  @Override
+  public Status soeUpdate(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+      String key = gen.getCustomerIdWithDistribution();
+      String updateFieldName = gen.getPredicate().getNestedPredicateA().getName();
+      String updateFieldValue = gen.getPredicate().getNestedPredicateA().getValueA();
+
+      Document query = new Document("_id", key);
+      Document fieldsToSet = new Document();
+
+      fieldsToSet.put(updateFieldName, updateFieldValue);
+      Document update = new Document("$set", fieldsToSet);
+
+      UpdateResult res = collection.updateOne(query, update);
+      if (res.wasAcknowledged() && res.getMatchedCount() == 0) {
+        System.err.println("Nothing updated for key " + key);
+        return Status.NOT_FOUND;
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    }
+  }
+
+// *********************  SOE Read ********************************
+
+  @Override
+  public Status soeRead(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+      String key = gen.getCustomerIdWithDistribution();
+      Document query = new Document("_id", key);
+      FindIterable<Document> findIterable = collection.find(query);
+
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      Document queryResult = findIterable.first();
+
+      if (queryResult != null) {
+        soeFillMap(result, queryResult);
+      }
+      return queryResult != null ? Status.OK : Status.NOT_FOUND;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    }
+  }
+
+
+  // *********************  SOE Scan ********************************
+  @Override
+  public Status soeScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    String startkey = gen.getCustomerIdWithDistribution();
+    int recordcount = gen.getRandomLimit();
+    MongoCursor<Document> cursor = null;
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+
+      Document scanRange = new Document("$gte", startkey);
+      Document query = new Document("_id", scanRange);
+      Document sort = new Document("_id", INCLUDE);
+
+      FindIterable<Document> findIterable =
+          collection.find(query).sort(sort).limit(recordcount);
+
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      cursor = findIterable.iterator();
+
+      if (!cursor.hasNext()) {
+        System.err.println("Nothing found in scan for key " + startkey);
+        return Status.ERROR;
+      }
+
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
 
 
 
+  
   /**
    * Delete a record from the database.
    * 
@@ -386,6 +506,7 @@ public class MongoDbClient extends DB {
 
       Document queryResult = findIterable.first();
 
+
       if (queryResult != null) {
         fillMap(result, queryResult);
       }
@@ -519,6 +640,27 @@ public class MongoDbClient extends DB {
         resultMap.put(entry.getKey(),
             new ByteArrayByteIterator(((Binary) entry.getValue()).getData()));
       }
+    }
+  }
+
+  protected void soeFillMap(Map<String, ByteIterator> resultMap, Document obj) {
+    for (Map.Entry<String, Object> entry : obj.entrySet()) {
+      String value = "null";
+      //System.out.println("-=-=-=");
+      //System.out.println(entry.toString());
+      //System.out.println(entry.getValue().toString());
+      //System.out.println(entry.getValue().getClass().toString());
+      if (entry.getValue() != null) {
+        value = entry.getValue().toString();
+      }
+      resultMap.put(entry.getKey(), new StringByteIterator(value));
+
+      /*
+      if (entry.getValue() instanceof String) {
+        resultMap.put(entry.getKey(),
+            new StringByteIterator(((Binary) entry.getValue()).getData()));
+      }
+      */
     }
   }
 }
