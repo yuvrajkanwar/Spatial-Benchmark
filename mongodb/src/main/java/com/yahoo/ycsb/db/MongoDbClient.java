@@ -147,7 +147,6 @@ public class MongoDbClient extends DB {
 
     try {
       String key = generator.getCustomerIdRandom();
-      System.out.println(key);
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document("_id", key);
       FindIterable<Document> findIterable = collection.find(query);
