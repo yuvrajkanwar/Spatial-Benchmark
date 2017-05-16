@@ -58,7 +58,7 @@ public abstract class Generator {
   private static final String SOE_FIELD_CUSTOMER_LNAME = "middle_name";
   private static final String SOE_FIELD_CUSTOMER_MNAME = "last_name";
   private static final String SOE_FIELD_CUSTOMER_BALLANCE = "ballance_current";
-  private static final String SOE_FIELD_CUSTOMER_DOB = "dob";
+  public static final String SOE_FIELD_CUSTOMER_DOB = "dob";
   private static final String SOE_FIELD_CUSTOMER_EMAIL = "email";
   private static final String SOE_FIELD_CUSTOMER_ISACTIVE = "isActive";
   private static final String SOE_FIELD_CUSTOMER_LINEARSCORE = "linear_score";

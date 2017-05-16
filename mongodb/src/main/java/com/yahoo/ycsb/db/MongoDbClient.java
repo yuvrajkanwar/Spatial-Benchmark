@@ -42,9 +42,11 @@ import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 import com.mongodb.util.JSON;
 
+
 import com.yahoo.ycsb.generator.soe.Generator;
 import org.bson.Document;
 import org.bson.types.Binary;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +56,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.text.SimpleDateFormat;
 
 /**
  * MongoDB binding for YCSB framework using the MongoDB Inc. <a
@@ -144,13 +147,20 @@ public class MongoDbClient extends DB {
 
     try {
       String key = generator.getCustomerIdRandom();
+      System.out.println(key);
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document("_id", key);
       FindIterable<Document> findIterable = collection.find(query);
       Document queryResult = findIterable.first();
       if (queryResult == null) {
-        return Status.ERROR;
+        System.out.println("Empty return");
+        return Status.OK;
       }
+
+      SimpleDateFormat sdfr = new SimpleDateFormat("yyyy-MM-dd");
+      String dobStr = sdfr.format(queryResult.get(Generator.SOE_FIELD_CUSTOMER_DOB));
+      queryResult.put(Generator.SOE_FIELD_CUSTOMER_DOB, dobStr);
+
       generator.putCustomerDocument(key, queryResult.toJson());
       List<String> orders = (List<String>) queryResult.get(Generator.SOE_FIELD_CUSTOMER_ORDER_LIST);
       for (String order:orders) {
@@ -303,9 +313,154 @@ public class MongoDbClient extends DB {
     }
   }
 
+  // *********************  SOE Page ********************************
+
+  @Override
+  public Status soePage(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+    int offset = gen.getRandomOffset();
+    String addrzipName = gen.getPredicate().getName() + "." + gen.getPredicate().getNestedPredicateA().getName();
+    String addzipValue = gen.getPredicate().getNestedPredicateA().getValueA();
+
+    MongoCursor<Document> cursor = null;
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+
+      Document query = new Document(addrzipName, addzipValue);
+
+      FindIterable<Document> findIterable =
+          collection.find(query).limit(recordcount).skip(offset);
+
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      cursor = findIterable.iterator();
+
+      if (!cursor.hasNext()) {
+        System.err.println("Nothing found for " + addrzipName + " = " + addzipValue);
+        return Status.ERROR;
+      }
+
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
 
 
-  
+  // *********************  SOE search ********************************
+
+  @Override
+  public Status soeSearch(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+
+  /*
+  SELECT RAW `bucket-1` FROM `bucket-1` WHERE
+  address.country = “value1”
+  AND age_group = “value2”
+  and DATE_PART_STR(dob,'year') = “value”
+  ORDER BY address.country, age_group, DATE_PART_STR(dob,'year')
+  OFFSET <num>
+  LIMIT <num>
+
+
+  var start = new Date(2010, 11, 1);
+  var end = new Date(2010, 11, 30);
+
+  db.posts.find({created_on: {$gte: start, $lt: end}});
+
+
+db.b.find({
+    "address.country": "value1",
+    "age_group": "value2",
+    "date": {
+        "$gt": "value11",
+        "$lt": "value10"
+    }
+}).limit(10).sort({
+    "address.country": 1,
+    "age_group": 1,
+    "date": 1
+});
+
+    DBObject clause1 = new BasicDBObject("post_title", regex);
+    DBObject clause2 = new BasicDBObject("post_description", regex);
+    BasicDBList or = new BasicDBList();
+    or.add(clause1);
+    or.add(clause2);
+    DBObject query = new BasicDBObject("$or", or);
+
+    searchQuery.append("timestamp",BasicDBObjectBuilder
+    .start( "$gte",new SimpleDateFormat("yyyy-MM-dd'").parse("2015-12-07")).get());
+
+      Document scanRange = new Document("$gte", startkey);
+      Document query = new Document("_id", scanRange);
+
+   */
+    try {
+      int recordcount = gen.getRandomLimit();
+      int offset = gen.getRandomOffset();
+
+      String addrcountryName = gen.getPredicatesSequence().get(0).getName() + "." +
+          gen.getPredicatesSequence().get(0).getNestedPredicateA().getName();
+      String agegroupName = gen.getPredicatesSequence().get(1).getName();
+      String dobyearName = gen.getPredicatesSequence().get(2).getName();
+
+      String addrcountryValue = gen.getPredicatesSequence().get(0).getNestedPredicateA().getValueA();
+      String agegroupValue = gen.getPredicatesSequence().get(1).getValueA();
+      String dobyearValue = gen.getPredicatesSequence().get(2).getValueA();
+
+      MongoCollection<Document> collection = database.getCollection(table);
+
+
+      DBObject clause1 = new BasicDBObject(addrcountryName, addrcountryValue);
+      DBObject clause2 = new BasicDBObject(agegroupName, agegroupValue);
+      DBObject clause3Range =
+          new BasicDBObject("$gte", new SimpleDateFormat("yyyy-MM-dd'").parse("2015-1-1"));
+      DBObject clause3 = new BasicDBObject(dobyearName, clause3Range);
+      DBObject clause4Range =
+          new BasicDBObject("$lte", new SimpleDateFormat("yyyy-MM-dd'").parse("2015-12-31"));
+      DBObject clause4 = new BasicDBObject(dobyearName, clause4Range);
+
+      BasicDBList and = new BasicDBList();
+      and.add(clause1);
+      and.add(clause2);
+      and.add(clause3);
+      and.add(clause4);
+
+      Document query = new Document("$and", and);
+
+      FindIterable<Document> findIterable =
+          collection.find(query).limit(recordcount).skip(offset);
+
+    } catch (Exception e) {
+      System.out.println(e.getMessage().toString());
+    }
+
+    return null;
+  }
+
+
+
+
   /**
    * Delete a record from the database.
    * 
@@ -495,7 +650,6 @@ public class MongoDbClient extends DB {
       Document query = new Document("_id", key);
 
       FindIterable<Document> findIterable = collection.find(query);
-
       if (fields != null) {
         Document projection = new Document();
         for (String field : fields) {
@@ -508,8 +662,9 @@ public class MongoDbClient extends DB {
 
 
       if (queryResult != null) {
-        fillMap(result, queryResult);
+        //fillMap(result, queryResult);
       }
+      //ystem.out.println(result.toString());S
       return queryResult != null ? Status.OK : Status.NOT_FOUND;
     } catch (Exception e) {
       System.err.println(e.toString());
@@ -646,21 +801,14 @@ public class MongoDbClient extends DB {
   protected void soeFillMap(Map<String, ByteIterator> resultMap, Document obj) {
     for (Map.Entry<String, Object> entry : obj.entrySet()) {
       String value = "null";
-      //System.out.println("-=-=-=");
-      //System.out.println(entry.toString());
-      //System.out.println(entry.getValue().toString());
-      //System.out.println(entry.getValue().getClass().toString());
       if (entry.getValue() != null) {
         value = entry.getValue().toString();
       }
       resultMap.put(entry.getKey(), new StringByteIterator(value));
 
-      /*
-      if (entry.getValue() instanceof String) {
-        resultMap.put(entry.getKey(),
-            new StringByteIterator(((Binary) entry.getValue()).getData()));
+      if (entry.getKey().equals("_id")) {
+        System.out.println(entry.getValue());
       }
-      */
     }
   }
 }
