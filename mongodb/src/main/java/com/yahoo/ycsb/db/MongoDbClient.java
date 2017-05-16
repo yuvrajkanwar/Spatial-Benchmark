@@ -805,10 +805,6 @@ db.b.find({
         value = entry.getValue().toString();
       }
       resultMap.put(entry.getKey(), new StringByteIterator(value));
-
-      if (entry.getKey().equals("_id")) {
-        System.out.println(entry.getValue());
-      }
     }
   }
 }
