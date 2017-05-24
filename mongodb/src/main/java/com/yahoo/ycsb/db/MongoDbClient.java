@@ -371,6 +371,7 @@ public class MongoDbClient extends DB {
   @Override
   public Status soeSearch(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
+    MongoCursor<Document> cursor = null;
     try {
       int recordcount = gen.getRandomLimit();
       int offset = gen.getRandomOffset();
@@ -407,12 +408,41 @@ public class MongoDbClient extends DB {
       FindIterable<Document> findIterable =
           collection.find(query).limit(recordcount).skip(offset);
 
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      cursor = findIterable.iterator();
+
+      if (!cursor.hasNext()) {
+        System.err.println("Search failed");
+        return Status.NOT_FOUND;
+      }
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+        System.out.println(result.toString());
+      }
+      return Status.OK;
+
     } catch (Exception e) {
       System.out.println(e.getMessage().toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
     }
-
-    return null;
   }
+
 
 
 
