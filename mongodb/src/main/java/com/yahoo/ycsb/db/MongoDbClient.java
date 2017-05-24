@@ -339,8 +339,8 @@ public class MongoDbClient extends DB {
       cursor = findIterable.iterator();
 
       if (!cursor.hasNext()) {
-        System.err.println("Nothing found for " + addrzipName + " = " + addzipValue);
-        return Status.ERROR;
+        //System.err.println("Nothing found for " + addrzipName + " = " + addzipValue);
+        return Status.NOT_FOUND;
       }
 
       result.ensureCapacity(recordcount);
@@ -371,49 +371,6 @@ public class MongoDbClient extends DB {
   @Override
   public Status soeSearch(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
 
-  /*
-  SELECT RAW `bucket-1` FROM `bucket-1` WHERE
-  address.country = “value1”
-  AND age_group = “value2”
-  and DATE_PART_STR(dob,'year') = “value”
-  ORDER BY address.country, age_group, DATE_PART_STR(dob,'year')
-  OFFSET <num>
-  LIMIT <num>
-
-
-  var start = new Date(2010, 11, 1);
-  var end = new Date(2010, 11, 30);
-
-  db.posts.find({created_on: {$gte: start, $lt: end}});
-
-
-db.b.find({
-    "address.country": "value1",
-    "age_group": "value2",
-    "date": {
-        "$gt": "value11",
-        "$lt": "value10"
-    }
-}).limit(10).sort({
-    "address.country": 1,
-    "age_group": 1,
-    "date": 1
-});
-
-    DBObject clause1 = new BasicDBObject("post_title", regex);
-    DBObject clause2 = new BasicDBObject("post_description", regex);
-    BasicDBList or = new BasicDBList();
-    or.add(clause1);
-    or.add(clause2);
-    DBObject query = new BasicDBObject("$or", or);
-
-    searchQuery.append("timestamp",BasicDBObjectBuilder
-    .start( "$gte",new SimpleDateFormat("yyyy-MM-dd'").parse("2015-12-07")).get());
-
-      Document scanRange = new Document("$gte", startkey);
-      Document query = new Document("_id", scanRange);
-
-   */
     try {
       int recordcount = gen.getRandomLimit();
       int offset = gen.getRandomOffset();
