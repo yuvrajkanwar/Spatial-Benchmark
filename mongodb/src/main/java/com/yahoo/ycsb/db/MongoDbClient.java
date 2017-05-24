@@ -387,14 +387,14 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
 
-
+      System.out.println("-=-=-=--=-=-=-" + dobyearValue);
       DBObject clause1 = new BasicDBObject(addrcountryName, addrcountryValue);
       DBObject clause2 = new BasicDBObject(agegroupName, agegroupValue);
       DBObject clause3Range =
-          new BasicDBObject("$gte", new SimpleDateFormat("yyyy-MM-dd'").parse("2015-1-1"));
+          new BasicDBObject("$gte", new SimpleDateFormat("yyyy-MM-dd").parse(dobyearValue));
       DBObject clause3 = new BasicDBObject(dobyearName, clause3Range);
       DBObject clause4Range =
-          new BasicDBObject("$lte", new SimpleDateFormat("yyyy-MM-dd'").parse("2015-12-31"));
+          new BasicDBObject("$lte", new SimpleDateFormat("yyyy-MM-dd").parse(dobyearValue));
       DBObject clause4 = new BasicDBObject(dobyearName, clause4Range);
 
       BasicDBList and = new BasicDBList();
@@ -404,6 +404,7 @@ public class MongoDbClient extends DB {
       and.add(clause4);
 
       Document query = new Document("$and", and);
+      System.out.println("-=-=-=-" + query.toString());
 
       FindIterable<Document> findIterable =
           collection.find(query).limit(recordcount).skip(offset);
