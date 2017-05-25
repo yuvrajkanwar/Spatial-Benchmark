@@ -402,14 +402,11 @@ public class MongoDbClient extends DB {
       and.add(clause4);
 
       Document query = new Document("$and", and);
-      System.out.println(query.toString());
-
 
       FindIterable<Document> findIterable =
           collection.find(query).sort(new BasicDBObject(addrcountryName, -1).
               append(agegroupName, -1).append(dobyearName, -1)).limit(recordcount).skip(offset);
 
-      System.out.println(findIterable.toString());
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
@@ -419,7 +416,6 @@ public class MongoDbClient extends DB {
       cursor = findIterable.iterator();
 
       if (!cursor.hasNext()) {
-        System.err.println("Search failed");
         return Status.NOT_FOUND;
       }
       result.ensureCapacity(recordcount);
@@ -431,7 +427,6 @@ public class MongoDbClient extends DB {
         Document obj = cursor.next();
         soeFillMap(resultMap, obj);
         result.add(resultMap);
-        System.out.println(result.toString());
       }
       return Status.OK;
 
