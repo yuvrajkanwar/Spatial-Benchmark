@@ -404,8 +404,8 @@ public class MongoDbClient extends DB {
       Document query = new Document("$and", and);
 
       FindIterable<Document> findIterable =
-          collection.find(query).sort(new BasicDBObject(addrcountryName, -1).
-              append(agegroupName, -1).append(dobyearName, -1)).limit(recordcount).skip(offset);
+          collection.find(query).sort(new BasicDBObject(addrcountryName, 1).
+              append(agegroupName, 1).append(dobyearName, 1)).limit(recordcount).skip(offset);
 
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
