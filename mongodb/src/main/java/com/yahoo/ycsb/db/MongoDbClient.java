@@ -441,6 +441,58 @@ public class MongoDbClient extends DB {
   }
 
 
+  // *********************  SOE NestScan ********************************
+
+  @Override
+  public Status soeNestScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+    int offset = gen.getRandomOffset();
+    String nestedZipName =  gen.getPredicate().getName() + "." + gen.getPredicate().getNestedPredicateA().getName() +
+        "." + gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getName();
+    String nestedZipValue = gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getValueA();
+
+    MongoCursor<Document> cursor = null;
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+
+      Document query = new Document(nestedZipName, nestedZipValue);
+
+      FindIterable<Document> findIterable =
+          collection.find(query).limit(recordcount);
+
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      cursor = findIterable.iterator();
+
+      if (!cursor.hasNext()) {
+        return Status.NOT_FOUND;
+      }
+
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+        System.out.println(result.toString());
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
 
 
 
