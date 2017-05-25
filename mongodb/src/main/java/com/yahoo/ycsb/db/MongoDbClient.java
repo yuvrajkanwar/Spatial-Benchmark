@@ -492,7 +492,58 @@ public class MongoDbClient extends DB {
     }
   }
 
+  // *********************  SOE ArrayScan ********************************
 
+  @Override
+  public Status soeArrayScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+    String arrName =  gen.getPredicate().getName();
+    String arrValue = gen.getPredicate().getValueA();
+
+    MongoCursor<Document> cursor = null;
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+
+
+      BasicDBObject   query = new BasicDBObject();
+      query.put( arrName, arrValue );
+
+      FindIterable<Document> findIterable =
+          collection.find(query).limit(recordcount);
+      System.out.println(query.toString());
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+
+      cursor = findIterable.iterator();
+
+      if (!cursor.hasNext()) {
+        return Status.NOT_FOUND;
+      }
+
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+      }
+      System.out.println(result.toString());
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
 
   /**
    * Delete a record from the database.
