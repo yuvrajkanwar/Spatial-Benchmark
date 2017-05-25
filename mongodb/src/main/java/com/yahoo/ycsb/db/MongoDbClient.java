@@ -628,16 +628,16 @@ public class MongoDbClient extends DB {
 
         Document obj = cursor.next();
         if (obj.get(orderListName) != null) {
-          List<Document> order_list = new ArrayList<>();
+          List<Document> orderList = new ArrayList<>();
           for (String orderId: (List<String>) obj.get(orderListName)) {
             Document subquery = new Document("_id", orderId);
             FindIterable<Document> findSubIterable = collection.find(subquery);
             Document orderDoc = findSubIterable.first();
             if (orderDoc != null) {
-              order_list.add(orderDoc);
+              orderList.add(orderDoc);
             }
           }
-          obj.put(orderListName, order_list);
+          obj.put(orderListName, orderList);
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
