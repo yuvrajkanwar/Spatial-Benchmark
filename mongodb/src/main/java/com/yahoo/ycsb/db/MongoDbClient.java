@@ -627,7 +627,7 @@ public class MongoDbClient extends DB {
             new HashMap<String, ByteIterator>();
 
         Document obj = cursor.next();
-        if (obj.get(orderListName) != null ) {
+        if (obj.get(orderListName) != null) {
           for (String orderId: (List<String>) obj.get(orderListName)) {
             System.out.println("-=-=-=-=-" + orderId);
           }
