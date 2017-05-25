@@ -632,6 +632,7 @@ public class MongoDbClient extends DB {
             System.out.println("-=-=-=-=-" + orderId);
           }
         }
+        System.out.println("-=-=-=- " + obj.toString());
         //obj.put(orderListName, "test");
         soeFillMap(resultMap, obj);
         result.add(resultMap);
