@@ -557,7 +557,6 @@ public class MongoDbClient extends DB {
       query.put(fieldName + "." + fieldCountryName, fieldCountryValue);
       query.put(fieldName + "." + fieldCitiesName, fieldCitiesValue);
 
-      System.out.println(query.toString());
       FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
@@ -578,7 +577,6 @@ public class MongoDbClient extends DB {
         soeFillMap(resultMap, obj);
         result.add(resultMap);
       }
-      System.out.println(result.toString());
       return Status.OK;
     } catch (Exception e) {
       System.err.println(e.toString());
