@@ -538,6 +538,58 @@ public class MongoDbClient extends DB {
     }
   }
 
+  // *********************  SOE ArrayDeepScan ********************************
+
+  @Override
+  public Status soeArrayDeepScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+    String fieldName =  gen.getPredicate().getName();
+    String fieldCountryName = gen.getPredicate().getNestedPredicateA().getName();
+    String fieldCitiesName = gen.getPredicate().getNestedPredicateB().getName();
+    String fieldCountryValue = gen.getPredicate().getNestedPredicateA().getValueA();
+    String fieldCitiesValue = gen.getPredicate().getNestedPredicateB().getValueB();
+
+    MongoCursor<Document> cursor = null;
+    try {
+      MongoCollection<Document> collection = database.getCollection(table);
+
+      BasicDBObject   query = new BasicDBObject();
+      query.put(fieldName + "." + fieldCountryName, fieldCountryValue);
+      query.put(fieldName + "." + fieldCitiesName, fieldCitiesValue);
+
+      System.out.println(query.toString());
+      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      Document projection = new Document();
+      for (String field : gen.getAllFields()) {
+        projection.put(field, INCLUDE);
+      }
+      findIterable.projection(projection);
+      cursor = findIterable.iterator();
+      if (!cursor.hasNext()) {
+        return Status.NOT_FOUND;
+      }
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap =
+            new HashMap<String, ByteIterator>();
+
+        Document obj = cursor.next();
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+      }
+      System.out.println(result.toString());
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
+
   /**
    * Delete a record from the database.
    * 
