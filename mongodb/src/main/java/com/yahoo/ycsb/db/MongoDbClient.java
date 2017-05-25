@@ -506,7 +506,7 @@ public class MongoDbClient extends DB {
 
 
       BasicDBObject   query = new BasicDBObject();
-      query.put( arrName, arrValue );
+      query.put(arrName, arrValue);
 
       FindIterable<Document> findIterable =
           collection.find(query).limit(recordcount);
