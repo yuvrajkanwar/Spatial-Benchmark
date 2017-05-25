@@ -547,7 +547,7 @@ public class MongoDbClient extends DB {
     String fieldCountryName = gen.getPredicate().getNestedPredicateA().getName();
     String fieldCitiesName = gen.getPredicate().getNestedPredicateB().getName();
     String fieldCountryValue = gen.getPredicate().getNestedPredicateA().getValueA();
-    String fieldCitiesValue = gen.getPredicate().getNestedPredicateB().getValueB();
+    String fieldCitiesValue = gen.getPredicate().getNestedPredicateB().getValueA();
 
     MongoCursor<Document> cursor = null;
     try {
