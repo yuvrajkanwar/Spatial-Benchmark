@@ -633,7 +633,7 @@ public class MongoDbClient extends DB {
             Document subquery = new Document("_id", orderId);
             FindIterable<Document> findSubIterable = collection.find(subquery);
             Document orderDoc = findSubIterable.first();
-            if (orderDoc != null ) {
+            if (orderDoc != null) {
               order_list.add(orderDoc);
             }
           }
