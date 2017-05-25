@@ -600,9 +600,9 @@ public class MongoDbClient extends DB {
     int recordcount = gen.getRandomLimit();
 
     String orderListName = gen.getPredicatesSequence().get(0).getName();
-    String addrName = gen.getPredicatesSequence().get(0).getName();
-    String addrZipName = addrName + "." + gen.getPredicatesSequence().get(0).getNestedPredicateA().getName();
-    String addrZipValue = gen.getPredicatesSequence().get(0).getNestedPredicateA().getValueA();
+    String addrName = gen.getPredicatesSequence().get(1).getName();
+    String addrZipName = addrName + "." + gen.getPredicatesSequence().get(1).getNestedPredicateA().getName();
+    String addrZipValue = gen.getPredicatesSequence().get(1).getNestedPredicateA().getValueA();
 
 
 
