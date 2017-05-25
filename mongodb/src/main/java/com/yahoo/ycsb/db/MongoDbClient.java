@@ -499,6 +499,7 @@ public class MongoDbClient extends DB {
     int recordcount = gen.getRandomLimit();
     String arrName =  gen.getPredicate().getName();
     String arrValue = gen.getPredicate().getValueA();
+    Document sort = new Document("_id", INCLUDE);
 
     MongoCursor<Document> cursor = null;
     try {
@@ -507,7 +508,7 @@ public class MongoDbClient extends DB {
       BasicDBObject   query = new BasicDBObject();
       query.put(arrName, arrValue);
 
-      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      FindIterable<Document> findIterable = collection.find(query).sort(sort).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
@@ -549,6 +550,8 @@ public class MongoDbClient extends DB {
     String fieldCountryValue = gen.getPredicate().getNestedPredicateA().getValueA();
     String fieldCitiesValue = gen.getPredicate().getNestedPredicateB().getValueA();
 
+    Document sort = new Document("_id", INCLUDE);
+
     MongoCursor<Document> cursor = null;
     try {
       MongoCollection<Document> collection = database.getCollection(table);
@@ -557,7 +560,7 @@ public class MongoDbClient extends DB {
       query.put(fieldName + "." + fieldCountryName, fieldCountryValue);
       query.put(fieldName + "." + fieldCitiesName, fieldCitiesValue);
 
-      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      FindIterable<Document> findIterable = collection.find(query).sort(sort).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
