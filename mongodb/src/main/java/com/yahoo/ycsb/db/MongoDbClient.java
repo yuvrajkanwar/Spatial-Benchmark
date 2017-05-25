@@ -446,7 +446,6 @@ public class MongoDbClient extends DB {
   @Override
   public Status soeNestScan(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
     int recordcount = gen.getRandomLimit();
-    int offset = gen.getRandomOffset();
     String nestedZipName =  gen.getPredicate().getName() + "." + gen.getPredicate().getNestedPredicateA().getName() +
         "." + gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getName();
     String nestedZipValue = gen.getPredicate().getNestedPredicateA().getNestedPredicateA().getValueA();
@@ -481,7 +480,6 @@ public class MongoDbClient extends DB {
         Document obj = cursor.next();
         soeFillMap(resultMap, obj);
         result.add(resultMap);
-        System.out.println(result.toString());
       }
       return Status.OK;
     } catch (Exception e) {
