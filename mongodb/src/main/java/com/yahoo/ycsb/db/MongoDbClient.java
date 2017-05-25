@@ -48,13 +48,7 @@ import org.bson.Document;
 import org.bson.types.Binary;
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.text.SimpleDateFormat;
 
@@ -633,7 +627,12 @@ public class MongoDbClient extends DB {
             new HashMap<String, ByteIterator>();
 
         Document obj = cursor.next();
-        obj.put(orderListName, "test");
+        if (obj.get(orderListName) != null ) {
+          for (String orderId: (List<String>) obj.get(orderListName)) {
+            System.out.println("-=-=-=-=-" + orderId);
+          }
+        }
+        //obj.put(orderListName, "test");
         soeFillMap(resultMap, obj);
         result.add(resultMap);
       }
