@@ -504,25 +504,19 @@ public class MongoDbClient extends DB {
     try {
       MongoCollection<Document> collection = database.getCollection(table);
 
-
       BasicDBObject   query = new BasicDBObject();
       query.put(arrName, arrValue);
 
-      FindIterable<Document> findIterable =
-          collection.find(query).limit(recordcount);
-      System.out.println(query.toString());
+      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
       }
       findIterable.projection(projection);
-
       cursor = findIterable.iterator();
-
       if (!cursor.hasNext()) {
         return Status.NOT_FOUND;
       }
-
       result.ensureCapacity(recordcount);
 
       while (cursor.hasNext()) {
@@ -533,7 +527,6 @@ public class MongoDbClient extends DB {
         soeFillMap(resultMap, obj);
         result.add(resultMap);
       }
-      System.out.println(result.toString());
       return Status.OK;
     } catch (Exception e) {
       System.err.println(e.toString());
