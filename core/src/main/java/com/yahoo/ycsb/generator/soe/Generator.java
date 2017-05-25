@@ -139,6 +139,7 @@ public abstract class Generator {
       add(SOE_FIELD_CUSTOMER_ADDRESS);
       add(SOE_FIELD_CUSTOMER_CHILDREN);
       add(SOE_FIELD_CUSTOMER_VISITEDPLACES);
+      add(SOE_FIELD_CUSTOMER_ORDER_LIST);
     }};
 
 
