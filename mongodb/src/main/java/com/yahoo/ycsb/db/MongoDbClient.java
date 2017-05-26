@@ -555,7 +555,7 @@ public class MongoDbClient extends DB {
       query.put(fieldName + "." + fieldCountryName, fieldCountryValue);
       query.put(fieldName + "." + fieldCitiesName, fieldCitiesValue);
 
-      FindIterable<Document> findIterable = collection.find(query).sort(sort).limit(recordcount);
+      FindIterable<Document> findIterable = collection.find(query).sort(sort);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
@@ -603,7 +603,7 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(addrZipName, addrZipValue);
-      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      FindIterable<Document> findIterable = collection.find(query);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
         projection.put(field, INCLUDE);
@@ -659,7 +659,6 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(nameAddressZip, valueAddressZip);
-      System.out.println(query.toString());
       FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
       projection.put(nameOrderlist, INCLUDE);
