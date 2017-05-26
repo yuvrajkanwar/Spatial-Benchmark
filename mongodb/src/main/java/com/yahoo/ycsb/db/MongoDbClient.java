@@ -690,8 +690,7 @@ public class MongoDbClient extends DB {
 
 
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
-          for (Document dbObject : output)
-          {
+          for (Document dbObject : output) {
             System.out.println("=-=" + dbObject);
           }
 
