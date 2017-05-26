@@ -668,7 +668,7 @@ public class MongoDbClient extends DB {
       if (!cursor.hasNext()) {
         return Status.NOT_FOUND;
       }
-      int totalsum = 0;
+      float totalsum = 0;
       HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
       while (cursor.hasNext()) {
         Document obj = cursor.next();
@@ -688,7 +688,7 @@ public class MongoDbClient extends DB {
 
           for (Document dbObject : output) {
             if (dbObject.get("SUM") != null) {
-              totalsum += Integer.parseInt(dbObject.get("SUM").toString());
+              totalsum += Float.parseFloat(dbObject.get("SUM").toString());
             }
           }
         }
