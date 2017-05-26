@@ -629,7 +629,7 @@ public class MongoDbClient extends DB {
 
           System.out.println("-=-=-=-=-=-==-");
           System.out.println(subq);
-
+          System.out.println(obj.toString());
 
           /*
           for (String orderId: (List<String>) obj.get(orderListName)) {
@@ -645,6 +645,8 @@ public class MongoDbClient extends DB {
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
+        System.out.println(result.toString());
+
       }
       return Status.OK;
     } catch (Exception e) {
