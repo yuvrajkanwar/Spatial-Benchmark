@@ -683,16 +683,10 @@ public class MongoDbClient extends DB {
           subq.put(nameOrderMonth, valueOrderMonth);
 
 
-          BasicDBObject group = new BasicDBObject(
-              "$group", new BasicDBObject("_id", null).append(
-              "total", new BasicDBObject( "$sum", "$key1" )
-          )
-          );
-
           AggregateIterable<Document> orderDoc = collection.aggregate(Arrays.asList(
               new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
               new Document("$group", new Document("_id", null).
-                  append("SUM", new BasicDBObject( "$sum", nameOrderSaleprice)))
+                  append("SUM", new BasicDBObject("$sum", nameOrderSaleprice)))
           ));
 
 
