@@ -602,7 +602,6 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(addrZipName, addrZipValue);
-      System.out.println(query.toString());
       FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
@@ -619,34 +618,14 @@ public class MongoDbClient extends DB {
         HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
         Document obj = cursor.next();
         if (obj.get(orderListName) != null) {
-          List<Document> orderList = new ArrayList<>();
-
           BasicDBObject subq  = new BasicDBObject();
           subq.put("_id", new BasicDBObject("$in", obj.get(orderListName)));
           FindIterable<Document> findSubIterable = collection.find(subq);
           Document orderDoc = findSubIterable.first();
           obj.put(orderListName, orderDoc);
-
-          System.out.println("-=-=-=-=-=-==-");
-          System.out.println(subq);
-          System.out.println(obj.toString());
-
-          /*
-          for (String orderId: (List<String>) obj.get(orderListName)) {
-            Document subquery = new Document("_id", orderId);
-            FindIterable<Document> findSubIterable = collection.find(subquery);
-            Document orderDoc = findSubIterable.first();
-            if (orderDoc != null) {
-              orderList.add(orderDoc);
-            }
-          }
-          obj.put(orderListName, orderList);
-          */
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
-        System.out.println(result.toString());
-
       }
       return Status.OK;
     } catch (Exception e) {
@@ -679,12 +658,9 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(nameAddressZip, valueAddressZip);
-
+      System.out.println(query.toString());
       FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
-      //for (String field : gen.getAllFields()) {
-      //  projection.put(field, INCLUDE);
-      //}
       projection.put(nameOrderlist, INCLUDE);
       projection.put(nameAddressZip, INCLUDE);
 
@@ -705,9 +681,12 @@ public class MongoDbClient extends DB {
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
           subq.put(nameOrderSaleprice, new BasicDBObject("$sum", 1));
+          System.out.println("-=-===-=-" + subq.toString());
 
           FindIterable<Document> findSubIterable = collection.find(subq);
           Document orderDoc = findSubIterable.first();
+          System.out.println("===-=-=" + orderDoc.toString());
+
           obj.put(nameOrderMonth, valueOrderMonth);
           obj.put("sum", orderDoc.get(nameOrderSaleprice));
 
