@@ -698,7 +698,7 @@ public class MongoDbClient extends DB {
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           for (Document dbObject : output) {
             System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject.get("SUM"));
-            if (dbObject.get("SUM") != null ) {
+            if (dbObject.get("SUM") != null) {
               totalsum += Integer.parseInt(dbObject.get("SUM").toString());
             }
           }
