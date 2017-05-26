@@ -684,8 +684,8 @@ public class MongoDbClient extends DB {
 
           AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
               new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
-              new Document("$group", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist))).
-                  append("SUM", new BasicDBObject("$sum", "sale_price")))
+              new Document("$group", new Document("_id", "sale_price").
+                  append("SUM", new BasicDBObject("$sum", 1)))
           ));
 
 
