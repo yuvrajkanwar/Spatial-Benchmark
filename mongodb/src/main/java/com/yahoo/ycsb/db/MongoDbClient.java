@@ -682,21 +682,22 @@ public class MongoDbClient extends DB {
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
 
-
-          AggregateIterable<Document> orderDoc = collection.aggregate(Arrays.asList(
+          AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
               new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
               new Document("$group", new Document("_id", null).
                   append("SUM", new BasicDBObject("$sum", nameOrderSaleprice)))
           ));
 
 
-
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
-          System.out.println("-=-===-=-" + subq.toString());
+          for (Document dbObject : output)
+          {
+            System.out.println("=-=" + dbObject);
+          }
 
           //FindIterable<Document> findSubIterable = collection.find(subq);
           //Document orderDoc = findSubIterable.first();
-          System.out.println("===-=-=" + orderDoc.toString());
+          //System.out.println("===-=-=" + orderDoc.toString());
 
           //obj.put(nameOrderMonth, valueOrderMonth);
           //obj.put("sum", orderDoc.get("sum"));
