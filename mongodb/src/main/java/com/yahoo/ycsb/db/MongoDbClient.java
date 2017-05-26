@@ -644,7 +644,7 @@ public class MongoDbClient extends DB {
 
   @Override
   public Status soeReport2(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
-    int recordcount = gen.getRandomLimit();
+    //int recordcount = gen.getRandomLimit();
 
     String nameOrderMonth = gen.getPredicatesSequence().get(0).getName();
     String nameOrderSaleprice = gen.getPredicatesSequence().get(1).getName();
@@ -659,7 +659,7 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(nameAddressZip, valueAddressZip);
-      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      FindIterable<Document> findIterable = collection.find(query);
       Document projection = new Document();
       projection.put(nameOrderlist, INCLUDE);
       projection.put(nameAddressZip, INCLUDE);
@@ -669,10 +669,11 @@ public class MongoDbClient extends DB {
       if (!cursor.hasNext()) {
         return Status.NOT_FOUND;
       }
-      result.ensureCapacity(recordcount);
-
+      //result.ensureCapacity(1000000);
+      int totalsum = 0;
+      HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
       while (cursor.hasNext()) {
-        HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
+        //HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
         Document obj = cursor.next();
         if (obj.get(nameOrderlist) != null) {
           List<Document> orderList = new ArrayList<>();
@@ -696,7 +697,10 @@ public class MongoDbClient extends DB {
 
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           for (Document dbObject : output) {
-            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject);
+            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject.get("SUM"));
+            if (dbObject.get("SUM") != null ) {
+              totalsum += Integer.parseInt(dbObject.get("SUM").toString());
+            }
           }
 
           //FindIterable<Document> findSubIterable = collection.find(subq);
@@ -718,10 +722,20 @@ public class MongoDbClient extends DB {
           obj.put(orderListName, orderList);
           */
         }
-        soeFillMap(resultMap, obj);
-        result.add(resultMap);
+
+        //soeFillMap(resultMap, obj);
+        //result.add(resultMap);
         //System.out.println(result.toString());
       }
+      Document res = new Document();
+      res.put(nameOrderSaleprice, String.valueOf(totalsum));
+      res.put(nameOrderMonth, valueOrderMonth);
+      res.put(nameAddressZip, valueAddressZip);
+      soeFillMap(resultMap, res);
+      result.add(resultMap);
+
+      System.out.println(result.toString());
+
       return Status.OK;
     } catch (Exception e) {
       System.err.println(e.toString());
