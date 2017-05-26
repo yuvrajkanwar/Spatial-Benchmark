@@ -622,7 +622,7 @@ public class MongoDbClient extends DB {
           List<Document> orderList = new ArrayList<>();
 
           BasicDBObject subq  = new BasicDBObject();
-          subq.put("_id",new BasicDBObject("$in",obj.get(orderListName)));
+          subq.put("_id",new BasicDBObject("$in", obj.get(orderListName)));
           FindIterable<Document> findSubIterable = collection.find(subq);
           Document orderDoc = findSubIterable.first();
           obj.put(orderListName, orderDoc);
@@ -696,7 +696,7 @@ public class MongoDbClient extends DB {
           List<Document> orderList = new ArrayList<>();
 
           BasicDBObject subq  = new BasicDBObject();
-          subq.put("_id",new BasicDBObject("$in",obj.get(nameOrderlist)));
+          subq.put("_id",new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
           subq.put(nameOrderSaleprice, new BasicDBObject("$sum", 1));
 
