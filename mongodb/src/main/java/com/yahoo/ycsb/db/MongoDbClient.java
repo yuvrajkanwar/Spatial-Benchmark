@@ -682,14 +682,14 @@ public class MongoDbClient extends DB {
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
 
-          //Document g1 = new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
+          Document g1 = new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           Document g2 = new Document(nameOrderMonth, valueOrderMonth);
 
           AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
               //new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
               //new Document("$match", new Document(nameOrderMonth, valueOrderMonth)),
 
-              new Document("$match", new Document("$and", Arrays.asList(g2))),
+              new Document("$match", new Document("$and", Arrays.asList(g1, g2))),
               new Document("$group", new Document("_id", null).
                   append("SUM", new BasicDBObject("$sum", "$sale_price")))
           ));
@@ -697,7 +697,7 @@ public class MongoDbClient extends DB {
 
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           for (Document dbObject : output) {
-            System.out.println("=-=" + dbObject);
+            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject);
           }
 
           //FindIterable<Document> findSubIterable = collection.find(subq);
@@ -721,7 +721,7 @@ public class MongoDbClient extends DB {
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
-        System.out.println(result.toString());
+        //System.out.println(result.toString());
       }
       return Status.OK;
     } catch (Exception e) {
