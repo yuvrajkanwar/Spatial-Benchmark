@@ -682,14 +682,14 @@ public class MongoDbClient extends DB {
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
 
-          Document g1 = new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
-          //Document g2 = new Document(nameOrderMonth, valueOrderMonth);
+          //Document g1 = new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
+          Document g2 = new Document(nameOrderMonth, valueOrderMonth);
 
           AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
               //new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
               //new Document("$match", new Document(nameOrderMonth, valueOrderMonth)),
 
-              new Document("$match", new Document("$and", Arrays.asList(g1))),
+              new Document("$match", new Document("$and", Arrays.asList(g2))),
               new Document("$group", new Document("_id", null).
                   append("SUM", new BasicDBObject("$sum", "$sale_price")))
           ));
