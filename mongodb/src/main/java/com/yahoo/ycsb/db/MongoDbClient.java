@@ -680,7 +680,7 @@ public class MongoDbClient extends DB {
           BasicDBObject subq  = new BasicDBObject();
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
-          subq.put(nameOrderSaleprice, new BasicDBObject("$sum", 1));
+          subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           System.out.println("-=-===-=-" + subq.toString());
 
           FindIterable<Document> findSubIterable = collection.find(subq);
@@ -688,7 +688,7 @@ public class MongoDbClient extends DB {
           System.out.println("===-=-=" + orderDoc.toString());
 
           obj.put(nameOrderMonth, valueOrderMonth);
-          obj.put("sum", orderDoc.get(nameOrderSaleprice));
+          obj.put("sum", orderDoc.get("sum"));
 
           /*
           for (String orderId: (List<String>) obj.get(orderListName)) {
