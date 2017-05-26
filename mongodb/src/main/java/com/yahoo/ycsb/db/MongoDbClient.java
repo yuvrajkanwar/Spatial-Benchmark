@@ -602,7 +602,7 @@ public class MongoDbClient extends DB {
 
       MongoCollection<Document> collection = database.getCollection(table);
       Document query = new Document(addrZipName, addrZipValue);
-
+      System.out.println(query.toString());
       FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
       Document projection = new Document();
       for (String field : gen.getAllFields()) {
@@ -616,11 +616,18 @@ public class MongoDbClient extends DB {
       result.ensureCapacity(recordcount);
 
       while (cursor.hasNext()) {
-        HashMap<String, ByteIterator> resultMap =
-            new HashMap<String, ByteIterator>();
+        HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
         Document obj = cursor.next();
         if (obj.get(orderListName) != null) {
           List<Document> orderList = new ArrayList<>();
+
+          BasicDBObject subq  = new BasicDBObject();
+          subq.put("_id",new BasicDBObject("$in",obj.get(orderListName)));
+          FindIterable<Document> findSubIterable = collection.find(subq);
+          Document orderDoc = findSubIterable.first();
+          obj.put(orderListName, orderDoc);
+
+          /*
           for (String orderId: (List<String>) obj.get(orderListName)) {
             Document subquery = new Document("_id", orderId);
             FindIterable<Document> findSubIterable = collection.find(subquery);
@@ -630,6 +637,7 @@ public class MongoDbClient extends DB {
             }
           }
           obj.put(orderListName, orderList);
+          */
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
@@ -645,6 +653,87 @@ public class MongoDbClient extends DB {
     }
   }
 
+
+  // *********************  SOE Report2 ********************************
+
+  @Override
+  public Status soeReport2(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
+    int recordcount = gen.getRandomLimit();
+
+    String nameOrderMonth = gen.getPredicatesSequence().get(0).getName();
+    String nameOrderSaleprice = gen.getPredicatesSequence().get(1).getName();
+    String nameAddress =  gen.getPredicatesSequence().get(2).getName();
+    String nameAddressZip =  nameAddress + "." + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName();
+    String nameOrderlist = gen.getPredicatesSequence().get(3).getName();
+    String valueOrderMonth = gen.getPredicatesSequence().get(0).getValueA();
+    String valueAddressZip =  gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
+
+    MongoCursor<Document> cursor = null;
+    try {
+
+      MongoCollection<Document> collection = database.getCollection(table);
+      Document query = new Document(nameAddressZip, valueAddressZip);
+
+      FindIterable<Document> findIterable = collection.find(query).limit(recordcount);
+      Document projection = new Document();
+      //for (String field : gen.getAllFields()) {
+      //  projection.put(field, INCLUDE);
+      //}
+      projection.put(nameOrderlist, INCLUDE);
+      projection.put(nameAddressZip, INCLUDE);
+
+      findIterable.projection(projection);
+      cursor = findIterable.iterator();
+      if (!cursor.hasNext()) {
+        return Status.NOT_FOUND;
+      }
+      result.ensureCapacity(recordcount);
+
+      while (cursor.hasNext()) {
+        HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
+        Document obj = cursor.next();
+        if (obj.get(nameOrderlist) != null) {
+          List<Document> orderList = new ArrayList<>();
+
+          BasicDBObject subq  = new BasicDBObject();
+          subq.put("_id",new BasicDBObject("$in",obj.get(nameOrderlist)));
+          subq.put(nameOrderMonth, valueOrderMonth);
+          subq.put(nameOrderSaleprice, new BasicDBObject("$sum", 1));
+
+          FindIterable<Document> findSubIterable = collection.find(subq);
+          Document orderDoc = findSubIterable.first();
+          obj.put(nameOrderMonth, valueOrderMonth);
+          obj.put("sum", orderDoc.get(nameOrderSaleprice));
+
+          /*
+          for (String orderId: (List<String>) obj.get(orderListName)) {
+            Document subquery = new Document("_id", orderId);
+            FindIterable<Document> findSubIterable = collection.find(subquery);
+            Document orderDoc = findSubIterable.first();
+            if (orderDoc != null) {
+              orderList.add(orderDoc);
+            }
+          }
+          obj.put(orderListName, orderList);
+          */
+        }
+        soeFillMap(resultMap, obj);
+        result.add(resultMap);
+        System.out.println(result.toString());
+      }
+      return Status.OK;
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      return Status.ERROR;
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+  }
+
+  //DBObject query = QueryBuilder.start("_id").in(new String[] {"foo", "bar"}).get();
+  //collection.find(query);
 
   /**
    * Delete a record from the database.
