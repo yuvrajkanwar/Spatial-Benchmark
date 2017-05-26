@@ -34,6 +34,7 @@ import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.AggregateIterable;
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.StringByteIterator;
@@ -680,15 +681,31 @@ public class MongoDbClient extends DB {
           BasicDBObject subq  = new BasicDBObject();
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
-          subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
+
+
+          BasicDBObject group = new BasicDBObject(
+              "$group", new BasicDBObject("_id", null).append(
+              "total", new BasicDBObject( "$sum", "$key1" )
+          )
+          );
+
+          AggregateIterable<Document> orderDoc = collection.aggregate(Arrays.asList(
+              new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
+              new Document("$group", new Document("_id", null).
+                  append("SUM", new BasicDBObject( "$sum", nameOrderSaleprice)))
+          ));
+
+
+
+          //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           System.out.println("-=-===-=-" + subq.toString());
 
-          FindIterable<Document> findSubIterable = collection.find(subq);
-          Document orderDoc = findSubIterable.first();
+          //FindIterable<Document> findSubIterable = collection.find(subq);
+          //Document orderDoc = findSubIterable.first();
           System.out.println("===-=-=" + orderDoc.toString());
 
-          obj.put(nameOrderMonth, valueOrderMonth);
-          obj.put("sum", orderDoc.get("sum"));
+          //obj.put(nameOrderMonth, valueOrderMonth);
+          //obj.put("sum", orderDoc.get("sum"));
 
           /*
           for (String orderId: (List<String>) obj.get(orderListName)) {
