@@ -644,15 +644,14 @@ public class MongoDbClient extends DB {
 
   @Override
   public Status soeReport2(String table, final Vector<HashMap<String, ByteIterator>> result, Generator gen) {
-    //int recordcount = gen.getRandomLimit();
 
     String nameOrderMonth = gen.getPredicatesSequence().get(0).getName();
     String nameOrderSaleprice = gen.getPredicatesSequence().get(1).getName();
     String nameAddress =  gen.getPredicatesSequence().get(2).getName();
     String nameAddressZip =  nameAddress + "." + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName();
     String nameOrderlist = gen.getPredicatesSequence().get(3).getName();
-    String valueOrderMonth = "February"; //gen.getPredicatesSequence().get(0).getValueA();
-    String valueAddressZip =  "72201"; //gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
+    String valueOrderMonth = gen.getPredicatesSequence().get(0).getValueA();
+    String valueAddressZip =  gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
 
     MongoCursor<Document> cursor = null;
     try {
@@ -669,17 +668,11 @@ public class MongoDbClient extends DB {
       if (!cursor.hasNext()) {
         return Status.NOT_FOUND;
       }
-      //result.ensureCapacity(1000000);
       int totalsum = 0;
       HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
       while (cursor.hasNext()) {
-
-        //HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
         Document obj = cursor.next();
-        System.out.println("=-=-=-=-=-=-" + obj.toString());
         if (obj.get(nameOrderlist) != null) {
-          List<Document> orderList = new ArrayList<>();
-
           BasicDBObject subq  = new BasicDBObject();
           subq.put("_id", new BasicDBObject("$in", obj.get(nameOrderlist)));
           subq.put(nameOrderMonth, valueOrderMonth);
@@ -688,56 +681,24 @@ public class MongoDbClient extends DB {
           Document g2 = new Document(nameOrderMonth, valueOrderMonth);
 
           AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
-              //new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
-              //new Document("$match", new Document(nameOrderMonth, valueOrderMonth)),
-
               new Document("$match", new Document("$and", Arrays.asList(g1, g2))),
               new Document("$group", new Document("_id", null).
                   append("SUM", new BasicDBObject("$sum", "$sale_price")))
           ));
 
-
-          //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           for (Document dbObject : output) {
-            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject);
-            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject.get("SUM"));
             if (dbObject.get("SUM") != null) {
               totalsum += Integer.parseInt(dbObject.get("SUM").toString());
             }
           }
-
-          //FindIterable<Document> findSubIterable = collection.find(subq);
-          //Document orderDoc = findSubIterable.first();
-          //System.out.println("===-=-=" + orderDoc.toString());
-
-          //obj.put(nameOrderMonth, valueOrderMonth);
-          //obj.put("sum", orderDoc.get("sum"));
-
-          /*
-          for (String orderId: (List<String>) obj.get(orderListName)) {
-            Document subquery = new Document("_id", orderId);
-            FindIterable<Document> findSubIterable = collection.find(subquery);
-            Document orderDoc = findSubIterable.first();
-            if (orderDoc != null) {
-              orderList.add(orderDoc);
-            }
-          }
-          obj.put(orderListName, orderList);
-          */
         }
-
-        //soeFillMap(resultMap, obj);
-        //result.add(resultMap);
-        //System.out.println(result.toString());
       }
       Document res = new Document();
-      res.put(nameOrderSaleprice, String.valueOf(totalsum));
+      res.put("Total", String.valueOf(totalsum));
       res.put(nameOrderMonth, valueOrderMonth);
       res.put(nameAddressZip, valueAddressZip);
       soeFillMap(resultMap, res);
       result.add(resultMap);
-
-      System.out.println(result.toString());
 
       return Status.OK;
     } catch (Exception e) {
