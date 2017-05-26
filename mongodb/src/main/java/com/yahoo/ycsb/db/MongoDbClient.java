@@ -673,8 +673,10 @@ public class MongoDbClient extends DB {
       int totalsum = 0;
       HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
       while (cursor.hasNext()) {
+
         //HashMap<String, ByteIterator> resultMap = new HashMap<String, ByteIterator>();
         Document obj = cursor.next();
+        System.out.println("=-=-=-=-=-=-" + obj.toString());
         if (obj.get(nameOrderlist) != null) {
           List<Document> orderList = new ArrayList<>();
 
@@ -697,6 +699,7 @@ public class MongoDbClient extends DB {
 
           //subq.put("sum", new BasicDBObject("$sum", nameOrderSaleprice));
           for (Document dbObject : output) {
+            System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject);
             System.out.println("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" + dbObject.get("SUM"));
             if (dbObject.get("SUM") != null) {
               totalsum += Integer.parseInt(dbObject.get("SUM").toString());
