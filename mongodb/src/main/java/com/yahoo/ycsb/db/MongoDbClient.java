@@ -651,8 +651,8 @@ public class MongoDbClient extends DB {
     String nameAddress =  gen.getPredicatesSequence().get(2).getName();
     String nameAddressZip =  nameAddress + "." + gen.getPredicatesSequence().get(2).getNestedPredicateA().getName();
     String nameOrderlist = gen.getPredicatesSequence().get(3).getName();
-    String valueOrderMonth = gen.getPredicatesSequence().get(0).getValueA();
-    String valueAddressZip =  gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
+    String valueOrderMonth = "February";//gen.getPredicatesSequence().get(0).getValueA();
+    String valueAddressZip =  "72201";//gen.getPredicatesSequence().get(2).getNestedPredicateA().getValueA();
 
     MongoCursor<Document> cursor = null;
     try {
