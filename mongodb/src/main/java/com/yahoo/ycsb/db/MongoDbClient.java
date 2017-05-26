@@ -627,6 +627,10 @@ public class MongoDbClient extends DB {
           Document orderDoc = findSubIterable.first();
           obj.put(orderListName, orderDoc);
 
+          System.out.println("-=-=-=-=-=-==-");
+          System.out.println(subq);
+
+
           /*
           for (String orderId: (List<String>) obj.get(orderListName)) {
             Document subquery = new Document("_id", orderId);
