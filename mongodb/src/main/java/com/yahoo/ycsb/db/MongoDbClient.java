@@ -716,7 +716,7 @@ public class MongoDbClient extends DB {
         }
         soeFillMap(resultMap, obj);
         result.add(resultMap);
-        //System.out.println(result.toString());
+        System.out.println(result.toString());
       }
       return Status.OK;
     } catch (Exception e) {
