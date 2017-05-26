@@ -685,7 +685,7 @@ public class MongoDbClient extends DB {
           AggregateIterable<Document> output = collection.aggregate(Arrays.asList(
               //new Document("$match", new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist)))),
               //new Document("$match", new Document(nameOrderMonth, valueOrderMonth)),
-              new Document("$match", new Document("and",
+              new Document("$match", new Document("$and",
                   new Document("_id", new BasicDBObject("$in", obj.get(nameOrderlist))).
                       append(nameOrderMonth, valueOrderMonth))),
               new Document("$group", new Document("_id", null).
