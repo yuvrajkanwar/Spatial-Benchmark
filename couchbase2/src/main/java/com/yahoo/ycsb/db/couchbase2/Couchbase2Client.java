@@ -760,6 +760,7 @@ public class Couchbase2Client extends DB {
         });
 
     result.addAll(data);
+
     return Status.OK;
   }
 

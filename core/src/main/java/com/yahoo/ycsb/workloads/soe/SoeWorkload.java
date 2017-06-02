@@ -49,6 +49,12 @@ public class SoeWorkload extends CoreWorkload {
   public static final String SOE_SEARCH_PROPORTION_PROPERTY = "soe_search";
   public static final String SOE_SEARCH_PROPORTION_PROPERTY_DEFAULT = "0.00";
 
+  public static final String SOE_PAGE2_PROPORTION_PROPERTY = "soe_page2";
+  public static final String SOE_PAGE2_PROPORTION_PROPERTY_DEFAULT = "0.00";
+
+  public static final String SOE_SEARCH2_PROPORTION_PROPERTY = "soe_search2";
+  public static final String SOE_SEARCH2_PROPORTION_PROPERTY_DEFAULT = "0.00";
+
   public static final String SOE_NESTSCAN_PROPORTION_PROPERTY = "soe_nestscan";
   public static final String SOE_NESTSCAN_PROPORTION_PROPERTY_DEFAULT = "0.00";
 
@@ -164,6 +170,12 @@ public class SoeWorkload extends CoreWorkload {
     case "SOE_SYNC":
       doTransactionSoeSync(db, generator);
       break;
+    case "SOE_PAGE2":
+      doTransactionSoePage2(db, generator);
+      break;
+    case "SOE_SEARCH2":
+      doTransactionSoeSearch2(db, generator);
+      break;
     default:
       doTransactionReadModifyWrite(db);
     }
@@ -223,6 +235,24 @@ public class SoeWorkload extends CoreWorkload {
   public void doTransactionSoeSearch(DB db, Generator generator) {
     try {
       db.soeSearch(table, new Vector<HashMap<String, ByteIterator>>(), generator);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      ex.printStackTrace(System.out);
+    }
+  }
+
+  public void doTransactionSoePage2(DB db, Generator generator) {
+    try {
+      db.soePage2(table, new Vector<HashMap<String, ByteIterator>>(), generator);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      ex.printStackTrace(System.out);
+    }
+  }
+
+  public void doTransactionSoeSearch2(DB db, Generator generator) {
+    try {
+      db.soeSearch2(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {
       ex.printStackTrace();
       ex.printStackTrace(System.out);
@@ -321,6 +351,10 @@ public class SoeWorkload extends CoreWorkload {
         p.getProperty(SOE_PAGE_PROPORTION_PROPERTY, SOE_PAGE_PROPORTION_PROPERTY_DEFAULT));
     final double soeSearch = Double.parseDouble(
         p.getProperty(SOE_SEARCH_PROPORTION_PROPERTY, SOE_SEARCH_PROPORTION_PROPERTY_DEFAULT));
+    final double soePage2 = Double.parseDouble(
+        p.getProperty(SOE_PAGE2_PROPORTION_PROPERTY, SOE_PAGE2_PROPORTION_PROPERTY_DEFAULT));
+    final double soeSearch2 = Double.parseDouble(
+        p.getProperty(SOE_SEARCH2_PROPORTION_PROPERTY, SOE_SEARCH2_PROPORTION_PROPERTY_DEFAULT));
     final double soeNetscan = Double.parseDouble(
         p.getProperty(SOE_NESTSCAN_PROPORTION_PROPERTY, SOE_NESTSCAN_PROPORTION_PROPERTY_DEFAULT));
     final double soeArrayscan = Double.parseDouble(
@@ -378,6 +412,15 @@ public class SoeWorkload extends CoreWorkload {
     if (soeSearch > 0) {
       operationchooser.addValue(soeSearch, "SOE_SEARCH");
     }
+
+    if (soePage2 > 0) {
+      operationchooser.addValue(soePage2, "SOE_PAGE2");
+    }
+
+    if (soeSearch2 > 0) {
+      operationchooser.addValue(soeSearch2, "SOE_SEARCH2");
+    }
+
 
     if (soeNetscan > 0) {
       operationchooser.addValue(soeNetscan, "SOE_NESTSCAN");

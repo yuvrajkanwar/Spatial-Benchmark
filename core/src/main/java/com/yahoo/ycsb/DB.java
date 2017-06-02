@@ -178,6 +178,16 @@ public abstract class DB {
     return null;
   }
 
+  public Status soePage2(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
+    System.err.println("soePage not implemented");
+    return null;
+  }
+
+  public Status soeSearch2(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
+    System.err.println("soeSearch not implemented");
+    return null;
+  }
+
   public Status soeNestScan(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
     System.err.println("soeNestScan not implemented");
     return null;

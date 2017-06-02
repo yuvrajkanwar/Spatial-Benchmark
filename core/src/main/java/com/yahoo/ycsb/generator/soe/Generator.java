@@ -78,6 +78,7 @@ public abstract class Generator {
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_CITY = "city";
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP = "zip";
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY = "country";
+  private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION = "geo_region";
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR = "prev_address";
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_STREET = "street";
   private static final String SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CITY = "city";
@@ -292,6 +293,18 @@ public abstract class Generator {
     soePredicate.setNestedPredicateA(innerPredicate);
   }
 
+  public void buildPage2Predicate() {
+    soePredicate = new SoeQueryPredicate();
+    soePredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
+    SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
+    innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION);
+    innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+        SOE_FIELD_CUSTOMER_ADDRESS,
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION)));
+    soePredicate.setNestedPredicateA(innerPredicate);
+  }
+
+
   public void buildSearchPredicatesSequenceN3() {
     SoeQueryPredicate predicate;
     soePredicatesSequence = new ArrayList<SoeQueryPredicate>();
@@ -303,6 +316,39 @@ public abstract class Generator {
     innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
         SOE_FIELD_CUSTOMER_ADDRESS,
         SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY)));
+    predicate.setNestedPredicateA(innerPredicate);
+    soePredicatesSequence.add(predicate);
+
+    predicate = new SoeQueryPredicate();
+    predicate.setName(SOE_FIELD_CUSTOMER_AGEGROUP);
+    predicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_FIELD_CUSTOMER_AGEGROUP)));
+    soePredicatesSequence.add(predicate);
+
+    predicate = new SoeQueryPredicate();
+    predicate.setName(SOE_FIELD_CUSTOMER_DOB);
+    String dob = getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+        SOE_FIELD_CUSTOMER_DOB));
+    try {
+      predicate.setValueA(dob.split("-")[0]);
+    } catch (Exception e) {
+      System.err.println("failed to get year out of DOB" + e.getMessage());
+      predicate.setValueA("2017");
+    }
+    soePredicatesSequence.add(predicate);
+  }
+
+
+  public void buildSearch2PredicatesSequenceN3() {
+    SoeQueryPredicate predicate;
+    soePredicatesSequence = new ArrayList<SoeQueryPredicate>();
+
+    predicate = new SoeQueryPredicate();
+    predicate.setName(SOE_FIELD_CUSTOMER_ADDRESS);
+    SoeQueryPredicate innerPredicate = new SoeQueryPredicate();
+    innerPredicate.setName(SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION);
+    innerPredicate.setValueA(getVal(buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER,
+        SOE_FIELD_CUSTOMER_ADDRESS,
+        SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION)));
     predicate.setNestedPredicateA(innerPredicate);
     soePredicatesSequence.add(predicate);
 
@@ -689,12 +735,14 @@ public abstract class Generator {
     tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP, null);
     tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY, null);
     tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_STREET, null);
+    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION, null);
 
     String l2Prefix = l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR + SOE_SYSTEMFIELD_DELIMITER;
     tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CITY, null);
     tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_ZIP, null);
     tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_STREET, null);
     tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_COUNTRY, null);
+
 
     String l3Prefix = l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER + SOE_SYSTEMFIELD_DELIMITER;
     tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_FNAME, null);
@@ -708,6 +756,7 @@ public abstract class Generator {
 
       ArrayList<String> inobjStringFields = new ArrayList<>(Arrays.asList(
           SOE_FIELD_CUSTOMER_ADDRESS_OBJ_CITY,
+          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION,
           SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP,
           SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY,
           SOE_FIELD_CUSTOMER_ADDRESS_OBJ_STREET));
