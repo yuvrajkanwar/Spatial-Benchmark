@@ -34,8 +34,8 @@ soe_request_distribution=zipfian
 soe_storage_host=localhost
 soe_storage_port=8000
 
-soe_querylimit_min = 10
-soe_querylimit_max = 10000
+soe_querylimit_min = 1
+soe_querylimit_max = 50
 
-soe_offset_min = 10
+soe_offset_min = 1
 soe_offset_max = 10000
