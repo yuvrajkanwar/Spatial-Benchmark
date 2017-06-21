@@ -262,7 +262,10 @@ public abstract class Generator {
   }
 
   public void buildInsertDocument() {
-    String storageKey = buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC);
+    //String storageKey = buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC);
+    String storageKey = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
+        SOE_METAFIELD_INSERTDOC + SOE_SYSTEMFIELD_DELIMITER + getNumberRandom(getStoredCustomersCount());
+
     String docBody = getVal(storageKey);
     String keyPrefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
     int docCounter = increment(keyPrefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
