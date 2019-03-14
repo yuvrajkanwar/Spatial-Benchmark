@@ -2,6 +2,7 @@ package com.yahoo.ycsb.generator.soe;
 
 import com.yahoo.ycsb.generator.ZipfianGenerator;
 import com.yahoo.ycsb.workloads.soe.SoeQueryPredicate;
+import com.yahoo.ycsb.workloads.soe.GeoQueryPredicate;
 import com.yahoo.ycsb.workloads.soe.SoeWorkload;
 
 import java.util.*;
@@ -22,6 +23,7 @@ public abstract class Generator {
 
   private int totalDocsCount = 0;
   private int storedDocsCountCustomer = 0;
+  private int storedDocsCountIncidents = 0;
   private int storedDocsCountOrder = 0;
   private Random rand = new Random();
 
@@ -36,20 +38,44 @@ public abstract class Generator {
   private ZipfianGenerator zipfianGenerator = null;
 
   private SoeQueryPredicate soePredicate;
+  private GeoQueryPredicate geoPredicate;
   private ArrayList<SoeQueryPredicate> soePredicatesSequence;
 
-
+  public static final String GEO_DOCUMENT_PREFIX_INCIDENTS = "incidents";
   public static final String SOE_DOCUMENT_PREFIX_CUSTOMER = "customer";
   public static final String SOE_DOCUMENT_PREFIX_ORDER = "order";
 
   public static final String SOE_SYSTEMFIELD_DELIMITER = ":::";
+  public static final String GEO_SYSTEMFIELD_DELIMITER = ":::";
   public static final String SOE_SYSTEMFIELD_INSERTDOC_COUNTER = "SOE_insert_document_counter";
+  public static final String GEO_SYSTEMFIELD_INSERTDOC_COUNTER = "GEO_insert_document_counter";
   public static final String SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER = "SOE_storage_docs_count_customer";
+  public static final String GEO_SYSTEMFIELD_STORAGEDOCS_COUNT_INCIDENTS = "GEO_storage_docs_count_incidents";
   public static final String SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER = "SOE_storage_docs_count_order";
   public static final String SOE_SYSTEMFIELD_TOTALDOCS_COUNT = "SOE_total_docs_count";
+  public static final String GEO_SYSTEMFIELD_TOTALDOCS_COUNT = "GEO_total_docs_count";
 
   private static final String SOE_METAFIELD_DOCID = "SOE_doc_id";
+  private static final String GEO_METAFIELD_DOCID = "GEO_doc_id";
   private static final String SOE_METAFIELD_INSERTDOC = "SOE_insert_document";
+  private static final String GEO_METAFIELD_INSERTDOC = "GEO_insert_document";
+
+  private static final String GEO_FIELD_INCIDENTS_ID = "_id";
+  private static final String GEO_FIELD_INCIDENTS_TYPE = "type";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES = "properties";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_OBJECTID = "OBJECTID";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_NUMBER = "INCIDENT_NUMBER";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_LOCATION = "LOCATION";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_NOTIFICATION = "NOTIFICATION";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_DATE = "INCIDENT_DATE";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_TAG_COUNT = "TAG_COUNT";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_MONIKER_CLASS = "MONIKER_CLASS";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_SQ_FT = "SQ_FT";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_PROP_TYPE = "PROP_TYPE";
+  private static final String GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_WAIVER = "Waiver";
+  private static final String GEO_FIELD_INCIDENTS_GEOMETRY = "geometry";
+  private static final String GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_TYPE = "type";
+  private static final String GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_COORDINATES = "coordinates";
 
   private static final String SOE_FIELD_CUSTOMER_ID = "_id";
   private static final String SOE_FIELD_CUSTOMER_DOCID = "doc_id";
@@ -143,6 +169,24 @@ public abstract class Generator {
       add(SOE_FIELD_CUSTOMER_ORDER_LIST);
     }};
 
+  private final Set<String> allGeoFields = new HashSet<String>() {{
+      add(GEO_FIELD_INCIDENTS_ID);
+      add(GEO_FIELD_INCIDENTS_TYPE);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_OBJECTID);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_NUMBER);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_LOCATION);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_NOTIFICATION);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_DATE);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_TAG_COUNT);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_MONIKER_CLASS);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_SQ_FT);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_PROP_TYPE);
+      add(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_WAIVER);
+      add(GEO_FIELD_INCIDENTS_GEOMETRY);
+      add(GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_TYPE);
+      add(GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_COORDINATES);
+    }};
 
   protected abstract void setVal(String key, String value);
 
@@ -179,6 +223,56 @@ public abstract class Generator {
 
   public final Set<String> getAllFields() {
     return allFields;
+  }
+  public final Set<String> getAllGeoFields() {
+    return allGeoFields;
+  }
+
+  public void putIncidentsDocument(String docKey, String docBody) throws Exception {
+    HashMap<String, String> tokens = tokenize(docBody);
+    String prefix = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER;
+    int storageCount = increment(prefix + GEO_SYSTEMFIELD_STORAGEDOCS_COUNT_INCIDENTS, 1) - 1;
+
+    setVal(prefix + GEO_METAFIELD_DOCID + GEO_SYSTEMFIELD_DELIMITER + storageCount, docKey);
+    setVal(prefix + GEO_METAFIELD_INSERTDOC + GEO_SYSTEMFIELD_DELIMITER + storageCount, docBody);
+
+    for (String key : tokens.keySet()){
+      String storageKey = prefix + key + GEO_SYSTEMFIELD_DELIMITER + storageCount;
+      String value = tokens.get(key);
+      if (value != null) {
+        setVal(storageKey, value);
+      }  else {
+        for (int i = (storageCount-1); i>0; i--) {
+          String prevKey = prefix + key + GEO_SYSTEMFIELD_DELIMITER + i;
+          String prevVal = getVal(prevKey);
+          if (prevVal != null) {
+            setVal(storageKey, prevVal);
+            break;
+          }
+        }
+      }
+    }
+
+    //make sure all values are initialized
+    if ((!allValuesInitialized) && (storageCount > 1)) {
+      boolean nullDetected = false;
+      for (String key : tokens.keySet()) {
+        for (int i = 0; i< storageCount; i++) {
+          String storageKey = prefix + key + GEO_SYSTEMFIELD_DELIMITER + i;
+          String storageValue = getVal(storageKey);
+          if (storageValue != null) {
+            for (int j = i; j>=0; j--) {
+              storageKey = prefix + key + GEO_SYSTEMFIELD_DELIMITER + j;
+              setVal(storageKey, storageValue);
+            }
+            break;
+          } else {
+            nullDetected = true;
+          }
+        }
+      }
+      allValuesInitialized = !nullDetected;
+    }
   }
 
   public void putCustomerDocument(String docKey, String docBody) throws Exception {
@@ -257,6 +351,10 @@ public abstract class Generator {
     return soePredicate;
   }
 
+  public GeoQueryPredicate getGeoPredicate() {
+    return geoPredicate;
+  }
+
   public ArrayList<SoeQueryPredicate> getPredicatesSequence() {
     return soePredicatesSequence;
   }
@@ -276,6 +374,67 @@ public abstract class Generator {
 
   }
 
+  public void buildGeoReadPredicate() {
+    buildGeoInsertDocument();
+    GeoQueryPredicate queryPredicate = new GeoQueryPredicate();
+    queryPredicate.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
+    double[] latLong = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    JSONArray jsonArray = new JSONArray(latLong);
+    JSONObject jobj = new JSONObject().put("type", "Point");
+    jobj.put("coordinates", jsonArray);
+    queryPredicate.setValueA(jobj);
+
+
+    buildGeoInsertDocument();
+    GeoQueryPredicate queryPredicate2 = new GeoQueryPredicate();
+    queryPredicate2.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
+    double[] latLong2 = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    JSONArray jsonArray2 = new JSONArray(latLong2);
+    JSONObject jobj2 = new JSONObject().put("type", "Point");
+    jobj2.put("coordinates", jsonArray2);
+    queryPredicate2.setValueA(jobj2);
+
+    buildGeoInsertDocument();
+    GeoQueryPredicate queryPredicate3 = new GeoQueryPredicate();
+    queryPredicate3.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
+    double[] latLong3 = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    double[] latLong4 = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    JSONArray jsonArray3 = new JSONArray(latLong3);
+    JSONArray jsonArray4 = new JSONArray(latLong4);
+    JSONArray jsonArray5 = new JSONArray();
+    JSONArray jsonArray6 = new JSONArray();
+    JSONArray jsonArray7 = new JSONArray();
+    jsonArray5.put(jsonArray);
+    jsonArray5.put(jsonArray2);
+    jsonArray6.put(jsonArray3);
+    jsonArray6.put(jsonArray4);
+    jsonArray7.put(jsonArray5);
+    jsonArray7.put(jsonArray6);
+    JSONObject jobj3 = new JSONObject().put("type", "MultiLineString");
+    jobj3.put("coordinates", jsonArray7);
+    queryPredicate3.setValueA(jobj3);
+    geoPredicate.setNestedPredicateC(queryPredicate3);
+    geoPredicate.setNestedPredicateB(queryPredicate2);
+    geoPredicate.setNestedPredicateA(queryPredicate);
+
+
+  }
+
+  public void buildGeoInsertDocument() {
+    //String storageKey = buildStorageKey(SOE_DOCUMENT_PREFIX_CUSTOMER, SOE_METAFIELD_INSERTDOC);
+    String storageKey = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER +
+        GEO_METAFIELD_INSERTDOC + GEO_SYSTEMFIELD_DELIMITER + getNumberRandom(getStoredIncidentsCount());
+
+    String docBody = getVal(storageKey);
+    String keyPrefix = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER;
+    int docCounter = increment(keyPrefix + GEO_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
+
+    geoPredicate = new GeoQueryPredicate();
+    geoPredicate.setDocid(keyPrefix + docCounter);
+    geoPredicate.setValue(docBody);
+
+  }
+
   // building value as random to make sure the original value is overwritten with new one
   public void buildUpdatePredicate() {
     buildInsertDocument();
@@ -283,6 +442,18 @@ public abstract class Generator {
     queryPredicate.setName(SOE_FIELD_CUSTOMER_BALLANCE);
     queryPredicate.setValueA("$" + rand.nextInt(99999) + "." + rand.nextInt(99));
     soePredicate.setNestedPredicateA(queryPredicate);
+  }
+
+  public void buildGeoUpdatePredicate() {
+    buildGeoInsertDocument();
+    GeoQueryPredicate queryPredicate = new GeoQueryPredicate();
+    queryPredicate.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
+    double[] latLong = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    JSONArray jsonArray = new JSONArray(latLong);
+    JSONObject jobj = new JSONObject().put("type", "Point");
+    jobj.put("coordinates", jsonArray);
+    queryPredicate.setValueA(jobj);
+    geoPredicate.setNestedPredicateA(queryPredicate);
   }
 
   public void buildPagePredicate() {
@@ -479,12 +650,23 @@ public abstract class Generator {
     return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER + getNumberRandom(getTotalcustomersCount());
   }
 
+  public String getIncidentsIdRandom() {
+    return "" + getNumberRandom(getTotalIncidentsCount());
+  }
+
   public String getCustomerIdWithDistribution() {
     if (isZipfian) {
       return SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
           getNumberZipfianLatests(getTotalcustomersCount());
     }
     return getCustomerIdRandom();
+  }
+
+  public String getIncidentIdWithDistribution() {
+    if (isZipfian) {
+      return getNumberZipfianLatests(getTotalIncidentsCount())+"";
+    }
+    return getIncidentsIdRandom();
   }
 
   public int getRandomLimit(){
@@ -536,13 +718,6 @@ public abstract class Generator {
       tokenizeFields(obj, tokens);
     } catch (JSONException ex) {
       System.err.println("Document parsing error - plain fields");
-      ex.printStackTrace();
-    }
-
-    try {
-      tokenizeArrays(obj, tokens);
-    } catch (JSONException ex) {
-      System.err.println("Document parsing error - arrays");
       ex.printStackTrace();
     }
 
@@ -600,11 +775,7 @@ public abstract class Generator {
 
 
     //string
-    ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(SOE_FIELD_CUSTOMER_ID,
-        SOE_FIELD_CUSTOMER_GID, SOE_FIELD_CUSTOMER_FNAME, SOE_FIELD_CUSTOMER_LNAME, SOE_FIELD_CUSTOMER_MNAME,
-        SOE_FIELD_CUSTOMER_BALLANCE, SOE_FIELD_CUSTOMER_DOB, SOE_FIELD_CUSTOMER_EMAIL, SOE_FIELD_CUSTOMER_PHONECOUNTRY,
-        SOE_FIELD_CUSTOMER_PHONE, SOE_FIELD_CUSTOMER_AGEGROUP, SOE_FIELD_CUSTOMER_URLPROTOCOL,
-        SOE_FIELD_CUSTOMER_URLSITE, SOE_FIELD_CUSTOMER_URLDOMAIN, SOE_FIELD_CUSTOMER_URL));
+    ArrayList<String> stringFields = new ArrayList<>(Arrays.asList(GEO_FIELD_INCIDENTS_TYPE));
 
     for (String field : stringFields) {
       tokens.put(field, null);
@@ -612,199 +783,92 @@ public abstract class Generator {
         tokens.put(field, obj.getString(field));
       }
     }
-
-    //integer
-    ArrayList<String> intFields = new ArrayList<>(Arrays.asList(SOE_FIELD_CUSTOMER_DOCID,
-        SOE_FIELD_CUSTOMER_LINEARSCORE, SOE_FIELD_CUSTOMER_WEIGHTEDSCORE, SOE_FIELD_CUSTOMER_AGE));
-
-    for (String field : intFields) {
-      tokens.put(field, null);
-      if (obj.has(field) && !obj.isNull(field)) {
-        tokens.put(field, String.valueOf(obj.getInt(field)));
-      }
-    }
-
-    //boolean
-    String field = SOE_FIELD_CUSTOMER_ISACTIVE;
-    tokens.put(field, null);
-    if (obj.has(field) && !obj.isNull(field)) {
-      tokens.put(field, String.valueOf(obj.getBoolean(field)));
-    }
-
-
   }
 
-  private void tokenizeArrays(JSONObject obj, HashMap<String, String>  tokens) {
-
-    //array
-    String field = SOE_FIELD_CUSTOMER_DEVICES;
-    tokens.put(field, null);
-    if (obj.has(field) && !obj.isNull(field)) {
-      JSONArray arr = obj.getJSONArray(field);
-      if (arr.length() > 0) {
-        int element = rand.nextInt(arr.length());
-        tokens.put(field, arr.getString(element));
-      }
-    }
-
-    field = SOE_FIELD_CUSTOMER_ORDER_LIST;
-    tokens.put(field, null);
-    if (obj.has(field) && !obj.isNull(field)) {
-      JSONArray arr = obj.getJSONArray(field);
-      if (arr.length() > 0) {
-        int element = rand.nextInt(arr.length());
-        tokens.put(field, arr.getString(element));
-      }
-    }
-
-    //array of arrays
-    field = SOE_FIELD_CUSTOMER_LINKEDDEVICES;
-    tokens.put(field, null);
-    if (obj.has(field) && !obj.isNull(field)) {
-      JSONArray arr = obj.getJSONArray(field);
-      if (arr.length() > 0) {
-        int element = rand.nextInt(arr.length());
-        JSONArray inarr = arr.getJSONArray(element);
-        if (inarr.length() > 0) {
-          int inelement = rand.nextInt(inarr.length());
-          tokens.put(field, inarr.getString(inelement));
-        }
-      }
-    }
-
-    //array of objects
-    field = SOE_FIELD_CUSTOMER_CHILDREN;
-    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_GENDER, null);
-    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_FNAME, null);
-    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_CHILDREN_OBJ_AGE, null);
-
-    if (obj.has(field) && !obj.isNull(field)) {
-      JSONArray inarr = obj.getJSONArray(field);
-      if (inarr.length() > 0) {
-        int element = rand.nextInt(inarr.length());
-        JSONObject inobj = inarr.getJSONObject(element);
-        ArrayList<String> inobjStringFields = new ArrayList<>(Arrays.asList(
-            SOE_FIELD_CUSTOMER_CHILDREN_OBJ_GENDER, SOE_FIELD_CUSTOMER_CHILDREN_OBJ_FNAME));
-
-        for (String infield : inobjStringFields) {
-          if (inobj.has(infield) && !inobj.isNull(infield)) {
-            String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-            tokens.put(key, inobj.getString(infield));
-          }
-        }
-        String infield = SOE_FIELD_CUSTOMER_CHILDREN_OBJ_AGE;
-        if (inobj.has(infield) && !inobj.isNull(infield)) {
-          String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-          tokens.put(key, String.valueOf(inobj.getInt(infield)));
-        }
-      }
-    }
-
-    //array of objects with array
-    field = SOE_FIELD_CUSTOMER_VISITEDPLACES;
-    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY, null);
-    tokens.put(field + SOE_SYSTEMFIELD_DELIMITER + SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES, null);
-
-    if (obj.has(field) && !obj.isNull(field)) {
-      JSONArray inarr = obj.getJSONArray(field);
-      if (inarr.length()>0) {
-        int element = rand.nextInt(inarr.length());
-        JSONObject inobj = inarr.getJSONObject(element);
-        String infield = SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_COUNTRY;
-        if (inobj.has(infield) && !inobj.isNull(infield)) {
-          String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-          tokens.put(key, inobj.getString(infield));
-        }
-        infield = SOE_FIELD_CUSTOMER_VISITEDPLACES_OBJ_CITIES;
-        if (inobj.has(infield) && !inobj.isNull(infield)) {
-          JSONArray inarr2 = inobj.getJSONArray(infield);
-          if (inarr2.length() >0) {
-            int inelement2 = rand.nextInt(inarr2.length());
-            String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
-            tokens.put(key, inarr2.getString(inelement2));
-          }
-        }
-      }
-    }
-  }
 
   private void tokenizeObjects(JSONObject obj, HashMap<String, String>  tokens) {
 
-    //3-level nested objects
-    String field = SOE_FIELD_CUSTOMER_ADDRESS;
+    String id = GEO_FIELD_INCIDENTS_ID;
 
-    String l1Prefix = field + SOE_SYSTEMFIELD_DELIMITER;
-    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_CITY, null);
-    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP, null);
-    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY, null);
-    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_STREET, null);
-    tokens.put(l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION, null);
+    tokens.put(GEO_FIELD_INCIDENTS_ID, null);
 
-    String l2Prefix = l1Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR + SOE_SYSTEMFIELD_DELIMITER;
-    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CITY, null);
-    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_ZIP, null);
-    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_STREET, null);
-    tokens.put(l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_COUNTRY, null);
+    if(obj.has(id) && !obj.isNull(id)){
+      JSONObject idobj = obj.getJSONObject(id);
+      String key = id;
+      tokens.put(key, JSONObject.valueToString(idobj));
+    }
+    //1-level nested objects
+    String field = GEO_FIELD_INCIDENTS_PROPERTIES;
 
-
-    String l3Prefix = l2Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER + SOE_SYSTEMFIELD_DELIMITER;
-    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_FNAME, null);
-    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_LNAME, null);
-    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_MNAME, null);
-    tokens.put(l3Prefix + SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_PHONE, null);
+    String l1Prefix = field + GEO_SYSTEMFIELD_DELIMITER;
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_OBJECTID, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_NUMBER, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_LOCATION, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_NOTIFICATION, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_DATE, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_TAG_COUNT, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_MONIKER_CLASS, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_SQ_FT, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_PROP_TYPE, null);
+    tokens.put(l1Prefix + GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_WAIVER, null);
 
 
     if (obj.has(field) && !obj.isNull(field)) {
       JSONObject inobj = obj.getJSONObject(field);
 
       ArrayList<String> inobjStringFields = new ArrayList<>(Arrays.asList(
-          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_CITY,
-          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_GEOREGION,
-          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_ZIP,
-          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_COUNTRY,
-          SOE_FIELD_CUSTOMER_ADDRESS_OBJ_STREET));
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_NUMBER,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_LOCATION,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_NOTIFICATION,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_INCIDENT_DATE,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_MONIKER_CLASS,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_PROP_TYPE,
+          GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_WAIVER));
 
       for (String infield : inobjStringFields) {
         if (inobj.has(infield) && !inobj.isNull(infield)) {
-          String key = field + SOE_SYSTEMFIELD_DELIMITER + infield;
+          String key = field + GEO_SYSTEMFIELD_DELIMITER + infield;
           tokens.put(key, inobj.getString(infield));
+        }
+        //integer
+        ArrayList<String> intFields = new ArrayList<>(Arrays.asList(GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_OBJECTID,
+            GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_TAG_COUNT, GEO_FIELD_INCIDENTS_PROPERTIES_OBJ_SQ_FT));
+
+        for (String intfield : intFields) {
+          if (inobj.has(intfield) && !inobj.isNull(intfield)) {
+            String key = field + GEO_SYSTEMFIELD_DELIMITER + intfield;
+            tokens.put(key, String.valueOf(inobj.getInt(intfield)));
+          }
+        }
+      }
+    }
+
+    //geospatial objects
+    String geoField = GEO_FIELD_INCIDENTS_GEOMETRY;
+
+    String lPrefix = geoField + GEO_SYSTEMFIELD_DELIMITER;
+    tokens.put(lPrefix + GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_TYPE, null);
+    tokens.put(lPrefix + GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_COORDINATES, null);
+
+
+    if (obj.has(geoField) && !obj.isNull(geoField)) {
+      JSONObject ingobj = obj.getJSONObject(geoField);
+
+      ArrayList<String> ingeoobjStringFields = new ArrayList<>(Arrays.asList(
+          GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_TYPE));
+
+      for (String gfield : ingeoobjStringFields) {
+        if (ingobj.has(gfield) && !ingobj.isNull(gfield)) {
+          String key = geoField + GEO_SYSTEMFIELD_DELIMITER + gfield;
+          tokens.put(key, ingobj.getString(gfield));
         }
       }
 
-      String infield = SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR;
-      if (inobj.has(infield) && !inobj.isNull(infield)) {
-        JSONObject inobj2 = inobj.getJSONObject(infield);
-
-        ArrayList<String> inobj2StringFields = new ArrayList<>(Arrays.asList(
-            SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CITY,
-            SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_ZIP,
-            SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_STREET,
-            SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_COUNTRY));
-
-        for (String infield2 : inobj2StringFields) {
-          if (inobj2.has(infield2) && !inobj2.isNull(infield2)) {
-            String key = field + SOE_SYSTEMFIELD_DELIMITER + infield + SOE_SYSTEMFIELD_DELIMITER + infield2;
-            tokens.put(key, inobj2.getString(infield2));
-          }
-        }
-
-        String infield2 = SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER;
-        if (inobj2.has(infield2) && !inobj2.isNull(infield2)) {
-          JSONObject inobj3 = inobj2.getJSONObject(infield2);
-          ArrayList<String> inobj3StringFields = new ArrayList<>(Arrays.asList(
-              SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_FNAME,
-              SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_LNAME,
-              SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_MNAME,
-              SOE_FIELD_CUSTOMER_ADDRESS_OBJ_PREVADDR_OBJ_CURRENTOWNER_OBJ_PHONE));
-
-          for (String infield3 : inobj3StringFields) {
-            if (inobj3.has(infield3) && !inobj3.isNull(infield3)) {
-              String key = field + SOE_SYSTEMFIELD_DELIMITER +
-                  infield + SOE_SYSTEMFIELD_DELIMITER + infield2 + SOE_SYSTEMFIELD_DELIMITER + infield3;
-              tokens.put(key, inobj3.getString(infield3));
-            }
-          }
-        }
+      String coord = GEO_FIELD_INCIDENTS_GEOMETRY_OBJ_COORDINATES;
+      JSONArray arr = ingobj.getJSONArray(coord);
+      if (arr.length() > 0) {
+        String key = geoField + GEO_SYSTEMFIELD_DELIMITER + coord;
+        tokens.put(key, arr.getLong(0)+","+arr.getLong(1));
       }
     }
   }
@@ -817,10 +881,26 @@ public abstract class Generator {
     return storedDocsCountCustomer;
   }
 
+  private int getStoredIncidentsCount() {
+    if (storedDocsCountIncidents == 0) {
+      storedDocsCountIncidents = Integer.parseInt(getVal(GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER +
+          GEO_SYSTEMFIELD_STORAGEDOCS_COUNT_INCIDENTS));
+    }
+    return storedDocsCountIncidents;
+  }
+
   private int getTotalcustomersCount() {
     if (totalDocsCount == 0) {
       totalDocsCount = Integer.parseInt(getVal(SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER +
           SOE_SYSTEMFIELD_TOTALDOCS_COUNT));
+    }
+    return totalDocsCount;
+  }
+
+  private int getTotalIncidentsCount() {
+    if (totalDocsCount == 0) {
+      totalDocsCount = Integer.parseInt(getVal(GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER +
+          GEO_SYSTEMFIELD_TOTALDOCS_COUNT));
     }
     return totalDocsCount;
   }

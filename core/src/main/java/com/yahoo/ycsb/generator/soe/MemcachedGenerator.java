@@ -30,27 +30,21 @@ public class MemcachedGenerator extends Generator {
     super(p);
     try {
       client = createMemcachedClient(memHost, Integer.parseInt(memPort));
-      String prefix = SOE_DOCUMENT_PREFIX_CUSTOMER + SOE_SYSTEMFIELD_DELIMITER;
+      String prefix = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER;
 
-      if (client.get(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT) == null){
-        client.add(prefix + SOE_SYSTEMFIELD_TOTALDOCS_COUNT, 0, totalDocs);
+      if (client.get(prefix + GEO_SYSTEMFIELD_TOTALDOCS_COUNT) == null){
+        client.add(prefix + GEO_SYSTEMFIELD_TOTALDOCS_COUNT, 0, totalDocs);
       }
       int insertOffset = Integer.parseInt(p.getProperty(CoreWorkload.INSERT_START_PROPERTY,
           CoreWorkload.INSERT_START_PROPERTY_DEFAULT));
 
-      if (client.get(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER) == null) {
-        client.add(prefix + SOE_SYSTEMFIELD_INSERTDOC_COUNTER, 0,
+      if (client.get(prefix + GEO_SYSTEMFIELD_INSERTDOC_COUNTER) == null) {
+        client.add(prefix + GEO_SYSTEMFIELD_INSERTDOC_COUNTER, 0,
             String.valueOf(Integer.parseInt(totalDocs) + 1 + insertOffset));
       }
 
-      if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER) == null) {
-        client.add(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_CUSTOMER, 0, "0");
-      }
-
-      prefix =  SOE_DOCUMENT_PREFIX_ORDER + SOE_SYSTEMFIELD_DELIMITER;
-
-      if (client.get(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER) == null) {
-        client.add(prefix + SOE_SYSTEMFIELD_STORAGEDOCS_COUNT_ORDER, 0, "0");
+      if (client.get(prefix + GEO_SYSTEMFIELD_STORAGEDOCS_COUNT_INCIDENTS) == null) {
+        client.add(prefix + GEO_SYSTEMFIELD_STORAGEDOCS_COUNT_INCIDENTS, 0, "0");
       }
 
     } catch (Exception e) {

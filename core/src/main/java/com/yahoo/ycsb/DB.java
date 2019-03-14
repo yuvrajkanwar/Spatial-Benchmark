@@ -144,12 +144,26 @@ public abstract class DB {
    */
 
   // overloading the standard "insert" operation as it used by YCSB for loading data
+  public Status geoLoad(String table, Generator generator) {
+    return null;
+  }
+
+  // overloading the standard "insert" operation as it used by YCSB for loading data
   public Status soeLoad(String table, Generator generator) {
     return null;
   }
 
+  public Status geoInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    System.err.println("geoInsert not implemented");
+    return null;
+  }
   public Status soeInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
     System.err.println("soeInsert not implemented");
+    return null;
+  }
+
+  public Status geoUpdate(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    System.err.println("geoUpdate not implemented");
     return null;
   }
 
@@ -163,8 +177,28 @@ public abstract class DB {
     return null;
   }
 
+  public Status geoNear(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    System.err.println("geoNear not implemented");
+    return null;
+  }
+
+  public Status geoBox(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    System.err.println("geoBox not implemented");
+    return null;
+  }
+
+  public Status geoIntersect(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    System.err.println("geoIntersect not implemented");
+    return null;
+  }
+
   public Status soeScan(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
     System.err.println("soeScan not implemented");
+    return null;
+  }
+
+  public Status geoScan(String table, Vector<HashMap<String, ByteIterator>> result, Generator gen)  {
+    System.err.println("geoScan not implemented");
     return null;
   }
 

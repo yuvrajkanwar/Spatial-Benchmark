@@ -1,20 +1,3 @@
-/**
- * Copyright (c) 2016 Yahoo! Inc. All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You
- * may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * permissions and limitations under the License. See accompanying
- * LICENSE file.
- */
-
 package com.yahoo.ycsb.db.couchbase2;
 
 import com.couchbase.client.core.env.DefaultCoreEnvironment;
@@ -50,19 +33,25 @@ import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 import com.couchbase.client.java.error.TemporaryFailureException;
 import com.couchbase.client.java.query.*;
+import com.couchbase.client.java.search.SearchQuery;
+import com.couchbase.client.java.search.queries.GeoDistanceQuery;
+import com.couchbase.client.java.search.result.SearchQueryResult;
 import com.couchbase.client.java.transcoder.JacksonTransformers;
 import com.couchbase.client.java.util.Blocking;
+import com.couchbase.client.java.view.SpatialViewQuery;
+import com.couchbase.client.java.view.SpatialViewResult;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 import com.yahoo.ycsb.StringByteIterator;
 import com.yahoo.ycsb.generator.soe.Generator;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.json.JSONObject;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
 import rx.functions.Func1;
-
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.channels.spi.SelectorProvider;
@@ -135,6 +124,7 @@ public class Couchbase2Client extends DB {
   private String soeScanN1qlQuery;
   private String soeScanKVQuery;
   private String soeInsertN1qlQuery;
+  private String geoInsertN1qlQuery;
   private String soeReadN1qlQuery;
   private int documentExpiry;
   private Boolean isSOETest;
@@ -144,8 +134,8 @@ public class Couchbase2Client extends DB {
     Properties props = getProperties();
 
     host = props.getProperty("couchbase.host", "127.0.0.1");
-    bucketName = props.getProperty("couchbase.bucket", "default");
-    String bucketPassword = props.getProperty("couchbase.password", "");
+    bucketName = props.getProperty("couchbase.bucket", "GrafittiDB");
+    String bucketPassword = props.getProperty("couchbase.password", "admin1234");
 
     upsert = props.getProperty("couchbase.upsert", "false").equals("true");
     persistTo = parsePersistTo(props.getProperty("couchbase.persistTo", "0"));
@@ -168,18 +158,15 @@ public class Couchbase2Client extends DB {
     soeQuerySelectIDClause = "SELECT RAW meta().id FROM";
     soeQuerySelectAllClause = "SELECT RAW `" + bucketName + "` FROM ";
     //soeQuerySelectAllClause = "SELECT * FROM ";
-
     soeReadN1qlQuery = soeQuerySelectAllClause + " `" + bucketName + "` USE KEYS [$1]";
-
     soeInsertN1qlQuery = "INSERT INTO `" + bucketName
         + "`(KEY,VALUE) VALUES ($1,$2)";
-
+    geoInsertN1qlQuery = "INSERT INTO `" + bucketName
+        + "`(KEY,VALUE) VALUES ($1,$2)";
     soeScanN1qlQuery =  soeQuerySelectAllClause + " `" + bucketName +
         "` WHERE meta().id >= $1 ORDER BY meta().id LIMIT $2";
-
     soeScanKVQuery =  soeQuerySelectIDClause + " `" + bucketName +
         "` WHERE meta().id >= $1 ORDER BY meta().id LIMIT $2";
-
     try {
       synchronized (INIT_COORDINATOR) {
         if (env == null) {
@@ -191,11 +178,9 @@ public class Couchbase2Client extends DB {
                   .emitFrequency(networkMetricsInterval)
                   .emitFrequencyUnit(TimeUnit.SECONDS)
                   .build();
-
           MetricsCollectorConfig runtimeConfig = runtimeMetricsInterval <= 0
               ? DefaultMetricsCollectorConfig.disabled()
               : DefaultMetricsCollectorConfig.create(runtimeMetricsInterval, TimeUnit.SECONDS);
-
           DefaultCouchbaseEnvironment.Builder builder = DefaultCouchbaseEnvironment
               .builder()
               .queryEndpoints(queryEndpoints)
@@ -206,32 +191,27 @@ public class Couchbase2Client extends DB {
               .connectTimeout(30000) // 30 secs overall bucket open timeout
               .kvTimeout(10000) // 10 instead of 2.5s for KV ops
               .kvEndpoints(kvEndpoints);
-
           // Tune boosting and epoll based on settings
           SelectStrategyFactory factory = boost > 0 ?
               new BackoffSelectStrategyFactory() : DefaultSelectStrategyFactory.INSTANCE;
-
           int poolSize = boost > 0 ? boost : Integer.parseInt(
               System.getProperty("com.couchbase.ioPoolSize", Integer.toString(DefaultCoreEnvironment.IO_POOL_SIZE))
           );
           ThreadFactory threadFactory = new DefaultThreadFactory("cb-io", true);
-
           EventLoopGroup group = epoll ? new EpollEventLoopGroup(poolSize, threadFactory, factory)
               : new NioEventLoopGroup(poolSize, threadFactory, SelectorProvider.provider(), factory);
           builder.ioPool(group, new IoPoolShutdownHook(group));
-
           env = builder.build();
           logParams();
         }
       }
-
       cluster = CouchbaseCluster.create(env, host);
       bucket = cluster.openBucket(bucketName, bucketPassword);
       kvTimeout = env.kvTimeout();
     } catch (Exception ex) {
+      System.out.println(bucket);
       throw new DBException("Could not connect to Couchbase Bucket.", ex);
     }
-
     if (!kv && !syncMutResponse) {
       throw new DBException("Not waiting for N1QL responses on mutations not yet implemented.");
     }
@@ -242,7 +222,6 @@ public class Couchbase2Client extends DB {
    */
   private void logParams() {
     StringBuilder sb = new StringBuilder();
-
     sb.append("host=").append(host);
     sb.append(", bucket=").append(bucketName);
     sb.append(", upsert=").append(upsert);
@@ -259,14 +238,25 @@ public class Couchbase2Client extends DB {
     sb.append(", boost=").append(boost);
     sb.append(", networkMetricsInterval=").append(networkMetricsInterval);
     sb.append(", runtimeMetricsInterval=").append(runtimeMetricsInterval);
-
     LOGGER.info("===> Using Params: " + sb.toString());
   }
 
-    /*
-    SOE operations.
-   */
-
+  @Override
+  public Status geoLoad(String table, Generator generator) {
+    try {
+      String docId = generator.getIncidentsIdRandom();
+      RawJsonDocument doc = bucket.get(docId, RawJsonDocument.class);
+      if (doc != null) {
+        generator.putIncidentsDocument(docId, doc.content().toString());
+      } else {
+        System.err.println("Error getting document from DB: " + docId);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+    return Status.OK;
+  }
 
   @Override
   public Status soeLoad(String table, Generator generator) {
@@ -314,6 +304,59 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
+  // *********************  GEO Insert ********************************
+
+  @Override
+  public Status geoInsert(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    try {
+      if (kv) {
+        return geoInsertKv(gen);
+      } else {
+        return geoInsertN1ql(gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status geoInsertKv(Generator gen) {
+    int tries = 60; // roughly 60 seconds with the 1 second sleep, not 100% accurate.
+    for(int i = 0; i < tries; i++) {
+      try {
+        waitForMutationResponse(bucket.async().insert(
+            RawJsonDocument.create(gen.getGeoPredicate().getDocid(), documentExpiry, gen.getGeoPredicate().getValue()),
+            persistTo,
+            replicateTo
+        ));
+        return Status.OK;
+      } catch (TemporaryFailureException ex) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          throw new RuntimeException("Interrupted while sleeping on TMPFAIL backoff.", ex);
+        }
+      }
+    }
+    throw new RuntimeException("Still receiving TMPFAIL from the server after trying " + tries + " times. " +
+        "Check your server.");
+  }
+
+  private Status geoInsertN1ql(Generator gen)
+      throws Exception {
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        geoInsertN1qlQuery,
+        JsonArray.from(gen.getGeoPredicate().getDocid(), JsonObject.fromJson(gen.getGeoPredicate().getValue())),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      throw new DBException("Error while parsing N1QL Result. Query: " + soeInsertN1qlQuery
+          + ", Errors: " + queryResult.errors());
+    }
+    return Status.OK;
+  }
 
   // *********************  SOE Insert ********************************
 
@@ -372,6 +415,49 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
+  // *********************  GEO Update ********************************
+
+  @Override
+  public Status geoUpdate(String table, HashMap<String, ByteIterator> result, Generator gen)  {
+    try {
+      if (kv) {
+        return geoUpdateKv(gen);
+      } else {
+        return geoUpdateN1ql(gen);
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return Status.ERROR;
+    }
+  }
+
+  private Status geoUpdateKv(Generator gen)  {
+    waitForMutationResponse(bucket.async().replace(
+        RawJsonDocument.create(gen.getIncidentIdWithDistribution(), documentExpiry,
+            gen.getGeoPredicate().getNestedPredicateA().getValueA().toString()),
+        persistTo,
+        replicateTo
+    ));
+
+    return Status.OK;
+  }
+
+  private Status geoUpdateN1ql(Generator gen)
+      throws Exception {
+    String updateQuery = "UPDATE `" + bucketName + "` USE KEYS [$1] SET " +
+        gen.getGeoPredicate().getNestedPredicateA().getName() + " = $2";
+
+    N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
+        updateQuery,
+        JsonArray.from(gen.getIncidentIdWithDistribution(), gen.getGeoPredicate().getNestedPredicateA().getValueA()),
+        N1qlParams.build().adhoc(adhoc).maxParallelism(maxParallelism)
+    ));
+
+    if (!queryResult.parseSuccess() || !queryResult.finalSuccess()) {
+      return Status.ERROR;
+    }
+    return Status.OK;
+  }
 
   // *********************  SOE Update ********************************
 
@@ -417,7 +503,87 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
+  // *********************  GEO Centre Based ********************************
+  @Override
+  public Status geoNear(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      JSONObject nearFieldValue = gen.getGeoPredicate().getNestedPredicateA().getValueA();
 
+      HashMap<String, Object> boxFields = new ObjectMapper().readValue(nearFieldValue.toString(), HashMap.class);
+      ArrayList coords1 = ((ArrayList) boxFields.get("coordinates"));
+
+      GeoDistanceQuery fts = SearchQuery.geoDistance((Double)coords1.get(0), (Double) coords1.get(1), "1000m");
+      SearchQuery query= new SearchQuery("Index", fts);
+
+      SearchQueryResult queryResult = bucket.query(query);
+
+      return queryResult != null ? Status.OK : Status.NOT_FOUND;
+    } catch (Exception e) {
+      System.err.println(e);
+      return Status.ERROR;
+    }
+  }
+
+  @Override
+  public Status geoBox(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      JSONObject boxFieldValue1 = gen.getGeoPredicate().getNestedPredicateA().getValueA();
+      JSONObject boxFieldValue2 = gen.getGeoPredicate().getNestedPredicateB().getValueA();
+
+      HashMap<String, Object> boxFields = new ObjectMapper().readValue(boxFieldValue1.toString(), HashMap.class);
+      HashMap<String, Object> boxFields1 = new ObjectMapper().readValue(boxFieldValue2.toString(), HashMap.class);
+      List<Double> rp = new ArrayList<>();
+      List coords = (ArrayList) boxFields.get("coordinates");
+      for(Object element: coords) {
+        rp.add((Double) element);
+      }
+      ArrayList coords2 = ((ArrayList) boxFields1.get("coordinates"));
+      for(Object element: coords2) {
+        rp.add((Double) element);
+      }
+
+      SpatialViewQuery q = SpatialViewQuery.from("spatial", "SpatialView")
+          .startRange(JsonArray.from(rp.get(0), rp.get(1), null))
+          .endRange(JsonArray.from(rp.get(2), rp.get(3), null));
+      SpatialViewResult queryResult = bucket.query(q);
+
+      return queryResult != null ? Status.OK : Status.NOT_FOUND;
+    } catch (Exception e) {
+      System.err.println(e);
+      return Status.ERROR;
+    }
+  }
+
+  @Override
+  public Status geoIntersect(String table, HashMap<String, ByteIterator> result, Generator gen) {
+    try {
+      String boxFieldName1 = gen.getGeoPredicate().getNestedPredicateA().getName();
+      JSONObject boxFieldValue1 = gen.getGeoPredicate().getNestedPredicateA().getValueA();
+      JSONObject boxFieldValue2 = gen.getGeoPredicate().getNestedPredicateB().getValueA();
+
+      HashMap<String, Object> boxFields = new ObjectMapper().readValue(boxFieldValue1.toString(), HashMap.class);
+      HashMap<String, Object> boxFields1 = new ObjectMapper().readValue(boxFieldValue2.toString(), HashMap.class);
+      List<Double> rp = new ArrayList<>();
+      List coords = (ArrayList) boxFields.get("coordinates");
+      for (Object element : coords) {
+        rp.add((Double) element);
+      }
+      ArrayList coords2 = ((ArrayList) boxFields1.get("coordinates"));
+      for (Object element : coords2) {
+        rp.add((Double) element);
+      }
+
+      SpatialViewQuery q = SpatialViewQuery.from("spatial", "SpatialView")
+          .startRange(JsonArray.from(rp.get(0), rp.get(1), null))
+          .endRange(JsonArray.from(rp.get(2), rp.get(3), null));
+      SpatialViewResult queryResult = bucket.query(q);
+
+      return queryResult != null ? Status.OK : Status.NOT_FOUND;
+    } catch (Exception e) {
+      System.err.println(e);
+      return Status.ERROR;
+    }
+  }
 // *********************  SOE Read ********************************
   @Override
   public Status soeRead(String table, HashMap<String, ByteIterator> result, Generator gen) {
@@ -1365,11 +1531,9 @@ public class Couchbase2Client extends DB {
 
   @Override
   public Status insert(final String table, final String key, final HashMap<String, ByteIterator> values) {
-
     if (upsert) {
       return upsert(table, key, values);
     }
-
     try {
       String docId = formatId(table, key);
       if (kv) {
@@ -1468,15 +1632,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Performs the {@link #upsert(String, String, HashMap)} operation via Key/Value ("upsert").
-   *
-   * If this option should be used, the "-p couchbase.upsert=true" property must be set.
-   *
-   * @param docId the document ID
-   * @param values the values to update the document with.
-   * @return The result of the operation.
-   */
   private Status upsertKv(final String docId, final HashMap<String, ByteIterator> values) {
     waitForMutationResponse(bucket.async().upsert(
         RawJsonDocument.create(docId, documentExpiry, encode(values)),
@@ -1486,15 +1641,6 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
-  /**
-   * Performs the {@link #upsert(String, String, HashMap)} operation via N1QL ("UPSERT").
-   *
-   * If this option should be used, the "-p couchbase.upsert=true -p couchbase.kv=false" properties must be set.
-   *
-   * @param docId the document ID
-   * @param values the values to update the document with.
-   * @return The result of the operation.
-   */
   private Status upsertN1ql(final String docId, final HashMap<String, ByteIterator> values)
     throws Exception {
     String upsertQuery = "UPSERT INTO `" + bucketName + "`(KEY,VALUE) VALUES ($1,$2)";
@@ -1542,14 +1688,6 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
-  /**
-   * Performs the {@link #delete(String, String)} (String, String)} operation via N1QL ("DELETE").
-   *
-   * If this option should be used, the "-p couchbase.kv=false" property must be set.
-   *
-   * @param docId the document ID.
-   * @return The result of the operation.
-   */
   private Status deleteN1ql(final String docId) throws Exception {
     String deleteQuery = "DELETE FROM `" + bucketName + "` USE KEYS [$1]";
     N1qlQueryResult queryResult = bucket.query(N1qlQuery.parameterized(
@@ -1580,19 +1718,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Performs the {@link #scan(String, String, int, Set, Vector)} operation, optimized for all fields.
-   *
-   * Since the full document bodies need to be loaded anyways, it makes sense to just grab the document IDs
-   * from N1QL and then perform the bulk loading via KV for better performance. This is a usual pattern with
-   * Couchbase and shows the benefits of using both N1QL and KV together.
-   *
-   * @param table The name of the table
-   * @param startkey The record key of the first record to read.
-   * @param recordcount The number of records to read
-   * @param result A Vector of HashMaps, where each HashMap is a set field/value pairs for one record
-   * @return The result of the operation.
-   */
   private Status scanAllFields(final String table, final String startkey, final int recordcount,
       final Vector<HashMap<String, ByteIterator>> result) {
     final List<HashMap<String, ByteIterator>> data = new ArrayList<HashMap<String, ByteIterator>>(recordcount);
@@ -1645,16 +1770,6 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
-  /**
-   * Performs the {@link #scan(String, String, int, Set, Vector)} operation N1Ql only for a subset of the fields.
-   *
-   * @param table The name of the table
-   * @param startkey The record key of the first record to read.
-   * @param recordcount The number of records to read
-   * @param fields The list of fields to read, or null for all of them
-   * @param result A Vector of HashMaps, where each HashMap is a set field/value pairs for one record
-   * @return The result of the operation.
-   */
   private Status scanSpecificFields(final String table, final String startkey, final int recordcount,
       final Set<String> fields, final Vector<HashMap<String, ByteIterator>> result) {
     String scanSpecQuery = "SELECT " + joinFields(fields) + " FROM `" + bucketName
@@ -1688,19 +1803,9 @@ public class Couchbase2Client extends DB {
     return Status.OK;
   }
 
-  /**
-   * Helper method to block on the response, depending on the property set.
-   *
-   * By default, since YCSB is sync the code will always wait for the operation to complete. In some
-   * cases it can be useful to just "drive load" and disable the waiting. Note that when the
-   * "-p couchbase.syncMutationResponse=false" option is used, the measured results by YCSB can basically
-   * be thrown away. Still helpful sometimes during load phases to speed them up :)
-   *
-   * @param input the async input observable.
-   */
   private void waitForMutationResponse(final Observable<? extends Document<?>> input) {
     if (!syncMutResponse) {
-      ((Observable<Document<?>>)input).subscribe(new Subscriber<Document<?>>() {
+      ((Observable<Document<?>>) input).subscribe(new Subscriber<Document<?>>() {
         @Override
         public void onCompleted() {
         }
@@ -1718,12 +1823,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Helper method to turn the values into a String, used with {@link #upsertN1ql(String, HashMap)}.
-   *
-   * @param values the values to encode.
-   * @return the encoded string.
-   */
   private static String encodeN1qlFields(final HashMap<String, ByteIterator> values) {
     if (values.isEmpty()) {
       return "";
@@ -1739,12 +1838,6 @@ public class Couchbase2Client extends DB {
     return toReturn.substring(0, toReturn.length() - 1);
   }
 
-  /**
-   * Helper method to turn the map of values into a {@link JsonObject} for further use.
-   *
-   * @param values the values to transform.
-   * @return the created json object.
-   */
   private static JsonObject valuesToJsonObject(final HashMap<String, ByteIterator> values) {
     JsonObject result = JsonObject.create();
     for (Map.Entry<String, ByteIterator> entry : values.entrySet()) {
@@ -1753,12 +1846,6 @@ public class Couchbase2Client extends DB {
     return result;
   }
 
-  /**
-   * Helper method to join the set of fields into a String suitable for N1QL.
-   *
-   * @param fields the fields to join.
-   * @return the joined fields as a String.
-   */
   private static String joinFields(final Set<String> fields) {
     if (fields == null || fields.isEmpty()) {
       return "*";
@@ -1771,26 +1858,12 @@ public class Couchbase2Client extends DB {
     return toReturn.substring(0, toReturn.length() - 1);
   }
 
-  /**
-   * Helper method to turn the prefix and key into a proper document ID.
-   *
-   * @param prefix the prefix (table).
-   * @param key the key itself.
-   * @return a document ID that can be used with Couchbase.
-   */
   private static String formatId(final String prefix, final String key) {
     return prefix + SEPARATOR + key;
   }
 
-  /**
-   * Helper method to parse the "ReplicateTo" property on startup.
-   *
-   * @param property the proeprty to parse.
-   * @return the parsed setting.
-   */
   private static ReplicateTo parseReplicateTo(final String property) throws DBException {
     int value = Integer.parseInt(property);
-
     switch (value) {
     case 0:
       return ReplicateTo.NONE;
@@ -1805,15 +1878,8 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Helper method to parse the "PersistTo" property on startup.
-   *
-   * @param property the proeprty to parse.
-   * @return the parsed setting.
-   */
   private static PersistTo parsePersistTo(final String property) throws DBException {
     int value = Integer.parseInt(property);
-
     switch (value) {
     case 0:
       return PersistTo.NONE;
@@ -1830,13 +1896,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Decode the String from server and pass it into the decoded destination.
-   *
-   * @param source the loaded object.
-   * @param fields the fields to check.
-   * @param dest the result passed back to YCSB.
-   */
   private void decode(final String source, final Set<String> fields,
                       final HashMap<String, ByteIterator> dest) {
     try {
@@ -1858,12 +1917,6 @@ public class Couchbase2Client extends DB {
     }
   }
 
-  /**
-   * Encode the source into a String for storage.
-   *
-   * @param source the source value.
-   * @return the encoded string.
-   */
   private String encode(final HashMap<String, ByteIterator> source) {
     HashMap<String, String> stringMap = StringByteIterator.getStringMap(source);
     ObjectNode node = JacksonTransformers.MAPPER.createObjectNode();
@@ -1881,12 +1934,6 @@ public class Couchbase2Client extends DB {
     return writer.toString();
   }
 
-  /**
-   * handling rich JSON types by converting Json arrays and Json objects into String.
-   * @param source
-   * @param fields
-   * @param dest
-   */
   private void soeDecode(final String source, final Set<String> fields,
                          final HashMap<String, ByteIterator> dest) {
     try {
@@ -1907,12 +1954,8 @@ public class Couchbase2Client extends DB {
       throw new RuntimeException("Could not soe-decode JSON");
     }
   }
-
 }
 
-/**
- * Factory for the {@link BackoffSelectStrategy} to be used with boosting.
- */
 class BackoffSelectStrategyFactory implements SelectStrategyFactory {
   @Override
   public SelectStrategy newSelectStrategy() {
@@ -1920,13 +1963,8 @@ class BackoffSelectStrategyFactory implements SelectStrategyFactory {
   }
 }
 
-/**
- * Custom IO select strategy which trades CPU for throughput, used with the boost setting.
- */
 class BackoffSelectStrategy implements SelectStrategy {
-
   private int counter = 0;
-
   @Override
   public int calculateStrategy(final IntSupplier supplier, final boolean hasTasks) throws Exception {
     int selectNowResult = supplier.get();
@@ -1935,7 +1973,6 @@ class BackoffSelectStrategy implements SelectStrategy {
       return selectNowResult;
     }
     counter++;
-
     if (counter > 2000) {
       LockSupport.parkNanos(1);
     } else if (counter > 3000) {
@@ -1947,8 +1984,6 @@ class BackoffSelectStrategy implements SelectStrategy {
       counter = 0;
       return SelectStrategy.SELECT;
     }
-
     return SelectStrategy.CONTINUE;
   }
-
 }
