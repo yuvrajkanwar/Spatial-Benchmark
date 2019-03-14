@@ -542,9 +542,9 @@ public class Couchbase2Client extends DB {
         rp.add((Double) element);
       }
 
-      SpatialViewQuery q = SpatialViewQuery.from("spatial", "SpatialView")
-          .startRange(JsonArray.from(rp.get(0), rp.get(1), null))
-          .endRange(JsonArray.from(rp.get(2), rp.get(3), null));
+      SpatialViewQuery q = SpatialViewQuery.from("dev_spatial", "SpatialView")
+          .startRange(JsonArray.from(rp.get(0), rp.get(1)))
+          .endRange(JsonArray.from(rp.get(2), rp.get(3)));
       SpatialViewResult queryResult = bucket.query(q);
 
       return queryResult != null ? Status.OK : Status.NOT_FOUND;
@@ -573,9 +573,9 @@ public class Couchbase2Client extends DB {
         rp.add((Double) element);
       }
 
-      SpatialViewQuery q = SpatialViewQuery.from("spatial", "SpatialView")
-          .startRange(JsonArray.from(rp.get(0), rp.get(1), null))
-          .endRange(JsonArray.from(rp.get(2), rp.get(3), null));
+      SpatialViewQuery q = SpatialViewQuery.from("dev_spatial", "SpatialView")
+          .startRange(JsonArray.from(rp.get(0), rp.get(1)))
+          .endRange(JsonArray.from(rp.get(2), rp.get(3)));
       SpatialViewResult queryResult = bucket.query(q);
 
       return queryResult != null ? Status.OK : Status.NOT_FOUND;
