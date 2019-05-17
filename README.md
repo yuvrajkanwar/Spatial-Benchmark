@@ -1,8 +1,4 @@
 
-Yahoo! Cloud System Benchmark (YCSB)
-====================================
-[![Build Status](https://travis-ci.org/brianfrankcooper/YCSB.png?branch=master)](https://travis-ci.org/brianfrankcooper/YCSB)
-
 Credit Links
 -----
 http://wiki.github.com/brianfrankcooper/YCSB/  
@@ -34,3 +30,6 @@ Executing Benchmark
 ./bin/ycsb load couchbase2 -P workloads/geo/workloadga -p couchbase.host="localhost:8091"
 ./bin/ycsb run couchbase2 -P workloads/geo/workloadga -p couchbase.host="localhost:8091"
     
+Yahoo! Cloud System Benchmark (YCSB)
+====================================
+[![Build Status](https://travis-ci.org/brianfrankcooper/YCSB.png?branch=master)](https://travis-ci.org/brianfrankcooper/YCSB)
