@@ -1,4 +1,4 @@
-package com.yahoo.ycsb.generator.soe;
+package com.yahoo.ycsb.generator.geo;
 
 
 import com.yahoo.ycsb.workloads.CoreWorkload;
@@ -21,7 +21,7 @@ import java.util.Properties;
  * It also provides the ability to query rich JSON documents by splitting JSON documents into query predicates
  * (field, value, type, field-value relation, logical operation)
  */
-public class MemcachedGenerator extends Generator {
+public class MemcachedGenerator extends ParameterGenerator {
 
   private net.spy.memcached.MemcachedClient client;
 

@@ -1,4 +1,4 @@
-package com.yahoo.ycsb.workloads.soe;
+package com.yahoo.ycsb.workloads.geo;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -6,7 +6,7 @@ import org.json.JSONObject;
 /**
  * Created by Yuvraj Singh Kanwar on 2/22/19.
  */
-public class GeoQueryPredicate {
+public class DataFilter {
 
   public static final String GEO_PREDICATE_TYPE_STRING = "string";
   public static final String GEO_PREDICATE_TYPE_INTEGER = "int";
@@ -25,10 +25,10 @@ public class GeoQueryPredicate {
   private String type = GEO_PREDICATE_TYPE_STRING;
 
 
-  private GeoQueryPredicate nestedPredicateA;
-  private GeoQueryPredicate nestedPredicateB;
-  private GeoQueryPredicate nestedPredicateC;
-  private GeoQueryPredicate nestedPredicateD;
+  private DataFilter nestedPredicateA;
+  private DataFilter nestedPredicateB;
+  private DataFilter nestedPredicateC;
+  private DataFilter nestedPredicateD;
 
 
   public void setName(String name) {
@@ -71,19 +71,19 @@ public class GeoQueryPredicate {
     this.type = type;
   }
 
-  public void setNestedPredicateA(GeoQueryPredicate nestedPredicateA) {
+  public void setNestedPredicateA(DataFilter nestedPredicateA) {
     this.nestedPredicateA = nestedPredicateA;
   }
 
-  public void setNestedPredicateB(GeoQueryPredicate nestedPredicateB) {
+  public void setNestedPredicateB(DataFilter nestedPredicateB) {
     this.nestedPredicateB = nestedPredicateB;
   }
 
-  public void setNestedPredicateC(GeoQueryPredicate nestedPredicateC) {
+  public void setNestedPredicateC(DataFilter nestedPredicateC) {
     this.nestedPredicateC = nestedPredicateC;
   }
 
-  public void setNestedPredicateD(GeoQueryPredicate nestedPredicateD) {
+  public void setNestedPredicateD(DataFilter nestedPredicateD) {
     this.nestedPredicateD = nestedPredicateD;
   }
 
@@ -129,19 +129,19 @@ public class GeoQueryPredicate {
     return type;
   }
 
-  public GeoQueryPredicate getNestedPredicateA() {
+  public DataFilter getNestedPredicateA() {
     return nestedPredicateA;
   }
 
-  public GeoQueryPredicate getNestedPredicateB() {
+  public DataFilter getNestedPredicateB() {
     return nestedPredicateB;
   }
 
-  public GeoQueryPredicate getNestedPredicateC() {
+  public DataFilter getNestedPredicateC() {
     return nestedPredicateC;
   }
 
-  public GeoQueryPredicate getNestedPredicateD() {
+  public DataFilter getNestedPredicateD() {
     return nestedPredicateD;
   }
 }

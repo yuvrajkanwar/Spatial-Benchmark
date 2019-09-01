@@ -18,7 +18,7 @@
 package com.yahoo.ycsb.workloads;
 
 import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.DB;
+import com.yahoo.ycsb.GeoDB;
 import com.yahoo.ycsb.RandomByteIterator;
 import com.yahoo.ycsb.WorkloadException;
 import com.yahoo.ycsb.generator.*;
@@ -234,12 +234,12 @@ public class RestWorkload extends CoreWorkload {
    * Not required for Rest Clients as data population is service specific.
    */
   @Override
-  public boolean doInsert(DB db, Object threadstate) {
+  public boolean doInsert(GeoDB db, Object threadstate) {
     return false;
   }
 
   @Override
-  public boolean doTransaction(DB db, Object threadstate) {
+  public boolean doTransaction(GeoDB db, Object threadstate) {
     String operation = operationchooser.nextString();
     if (operation == null) {
       return false;
@@ -277,25 +277,25 @@ public class RestWorkload extends CoreWorkload {
   }
 
   @Override
-  public void doTransactionRead(DB db) {
+  public void doTransactionRead(GeoDB db) {
     HashMap<String, ByteIterator> result = new HashMap<String, ByteIterator>();
     db.read(null, getNextURL(1), null, result);
   }
 
   @Override
-  public void doTransactionInsert(DB db) {
+  public void doTransactionInsert(GeoDB db) {
     HashMap<String, ByteIterator> value = new HashMap<String, ByteIterator>();
     // Create random bytes of insert data with a specific size.
     value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue()));
     db.insert(null, getNextURL(2), value);
   }
 
-  public void doTransactionDelete(DB db) {
+  public void doTransactionDelete(GeoDB db) {
     db.delete(null, getNextURL(3));
   }
 
   @Override
-  public void doTransactionUpdate(DB db) {
+  public void doTransactionUpdate(GeoDB db) {
     HashMap<String, ByteIterator> value = new HashMap<String, ByteIterator>();
     // Create random bytes of update data with a specific size.
     value.put("data", new RandomByteIterator(fieldlengthgenerator.nextValue().longValue()));

@@ -54,14 +54,14 @@ import org.apache.hadoop.io.Text;
 
 import com.yahoo.ycsb.ByteArrayByteIterator;
 import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.DB;
+import com.yahoo.ycsb.GeoDB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 
 /**
  * <a href="https://accumulo.apache.org/">Accumulo</a> binding for YCSB.
  */
-public class AccumuloClient extends DB {
+public class AccumuloClient extends GeoDB {
 
   private ZooKeeperInstance inst;
   private Connector connector;

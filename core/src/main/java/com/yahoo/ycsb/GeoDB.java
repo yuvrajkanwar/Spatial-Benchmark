@@ -1,21 +1,6 @@
-/**
- * Copyright (c) 2010-2016 Yahoo! Inc., 2017 YCSB contributors All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You
- * may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * permissions and limitations under the License. See accompanying
- * LICENSE file.
- */
-
 package com.yahoo.ycsb;
+
+import com.yahoo.ycsb.generator.geo.ParameterGenerator;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -23,6 +8,7 @@ import java.util.Set;
 import java.util.Vector;
 
 /**
+ * Author: Yuvraj Kanwar
  * A layer for accessing a database to be benchmarked. Each thread in the client
  * will be given its own instance of whatever DB class is to be used in the test.
  * This class should be constructed using a no-argument constructor, so we can
@@ -34,14 +20,14 @@ import java.util.Vector;
  *
  * The semantics of methods such as insert, update and delete vary from database
  * to database.  In particular, operations may or may not be durable once these
- * methods commit, and some systems may return 'success' regardless of whether
+ * methods commit, and some systems may return 'success' regardless of whetherF
  * or not a tuple with a matching key existed before the call.  Rather than dictate
  * the exact semantics of these methods, we recommend you either implement them
- * to match the database's default semantics, or the semantics of your 
- * target application.  For the sake of comparison between experiments we also 
+ * to match the database's default semantics, or the semantics of your
+ * target application.  For the sake of comparison between experiments we also
  * recommend you explain the semantics you chose when presenting performance results.
  */
-public abstract class DB {
+public abstract class GeoDB extends DB {
   /**
    * Properties for configuring this DB.
    */
@@ -133,4 +119,47 @@ public abstract class DB {
    * @return The result of the operation.
    */
   public abstract Status delete(String table, String key);
+
+
+  /**
+   *
+   *  GEO operations.
+   *
+   */
+
+  // overloading the standard "insert" operation as it used by YCSB for loading data
+  public Status geoLoad(String table, ParameterGenerator generator) {
+    return null;
+  }
+
+  public Status geoInsert(String table, HashMap<String, ByteIterator> result, ParameterGenerator gen)  {
+    System.err.println("geoInsert not implemented");
+    return null;
+  }
+
+  public Status geoUpdate(String table, HashMap<String, ByteIterator> result, ParameterGenerator gen)  {
+    System.err.println("geoUpdate not implemented");
+    return null;
+  }
+
+  public Status geoNear(String table, HashMap<String, ByteIterator> result, ParameterGenerator gen)  {
+    System.err.println("geoNear not implemented");
+    return null;
+  }
+
+  public Status geoBox(String table, HashMap<String, ByteIterator> result, ParameterGenerator gen)  {
+    System.err.println("geoBox not implemented");
+    return null;
+  }
+
+  public Status geoIntersect(String table, HashMap<String, ByteIterator> result, ParameterGenerator gen)  {
+    System.err.println("geoIntersect not implemented");
+    return null;
+  }
+
+  public Status geoScan(String table, Vector<HashMap<String, ByteIterator>> result, ParameterGenerator gen)  {
+    System.err.println("geoScan not implemented");
+    return null;
+  }
+
 }

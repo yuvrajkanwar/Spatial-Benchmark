@@ -363,7 +363,7 @@ class ClientThread implements Runnable {
   private final CountDownLatch completeLatch;
 
   private static boolean spinSleep;
-  private DB db;
+  private GeoDB db;
   private boolean dotransactions;
   private Workload workload;
   private int opcount;
@@ -388,7 +388,7 @@ class ClientThread implements Runnable {
    * @param targetperthreadperms target number of operations per thread per ms
    * @param completeLatch        The latch tracking the completion of all clients.
    */
-  public ClientThread(DB db, boolean dotransactions, Workload workload, Properties props, int opcount,
+  public ClientThread(GeoDB db, boolean dotransactions, Workload workload, Properties props, int opcount,
                       double targetperthreadperms, CountDownLatch completeLatch) {
     this.db = db;
     this.dotransactions = dotransactions;
@@ -859,7 +859,7 @@ public final class Client {
       }
 
       for (int threadid = 0; threadid < threadcount; threadid++) {
-        DB db;
+        GeoDB db;
         try {
           db = DBFactory.newDB(dbname, props, tracer);
         } catch (UnknownDBException e) {

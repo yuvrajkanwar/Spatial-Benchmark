@@ -1,12 +1,12 @@
-package com.yahoo.ycsb.workloads.soe;
+package com.yahoo.ycsb.workloads.geo;
 
 import com.yahoo.ycsb.ByteIterator;
-import com.yahoo.ycsb.DB;
+import com.yahoo.ycsb.GeoDB;
 import com.yahoo.ycsb.Status;
 import com.yahoo.ycsb.generator.DiscreteGenerator;
-import com.yahoo.ycsb.generator.soe.Generator;
+import com.yahoo.ycsb.generator.geo.ParameterGenerator;
 import com.yahoo.ycsb.workloads.CoreWorkload;
-import com.yahoo.ycsb.generator.soe.MemcachedGenerator;
+import com.yahoo.ycsb.generator.geo.MemcachedGenerator;
 import com.yahoo.ycsb.WorkloadException;
 
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.Properties;
 import java.util.Vector;
 
 /**
- * Created by oleksandr.gyryk on 3/20/17.
+ * Author: Yuvraj Kanwar.
  */
 public class GeoWorkload extends CoreWorkload {
 
@@ -28,9 +28,6 @@ public class GeoWorkload extends CoreWorkload {
   public static final String TOTAL_DOCS = "totalrecordcount";
   public static final String TOTAL_DOCS_DEFAULT = "13348";
   public static final String DOCS_START_VALUE = "1001";
-
-
-
 
   public static final String GEO_INSERT_PROPORTION_PROPERTY = "geo_insert";
   public static final String GEO_INSERT_PROPORTION_PROPERTY_DEFAULT = "0.00";
@@ -85,7 +82,7 @@ public class GeoWorkload extends CoreWorkload {
   }
 
   @Override
-  public boolean doInsert(DB db, Object threadstate) {
+  public boolean doInsert(GeoDB db, Object threadstate) {
     Status status;
     status = db.geoLoad(table, (MemcachedGenerator) threadstate);
     return null != status && status.isOk();
@@ -94,7 +91,7 @@ public class GeoWorkload extends CoreWorkload {
 
 
   @Override
-  public boolean doTransaction(DB db, Object threadstate) {
+  public boolean doTransaction(GeoDB db, Object threadstate) {
     String operation = operationchooser.nextString();
     if(operation == null) {
       return false;
@@ -137,7 +134,7 @@ public class GeoWorkload extends CoreWorkload {
   }
 
 
-  public void doTransactionGeoInsert(DB db, Generator generator) {
+  public void doTransactionGeoInsert(GeoDB db, ParameterGenerator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.geoInsert(table, cells, generator);
@@ -147,7 +144,7 @@ public class GeoWorkload extends CoreWorkload {
     }
   }
 
-  public void doTransactionGeoUpdate(DB db, Generator generator) {
+  public void doTransactionGeoUpdate(GeoDB db, ParameterGenerator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.geoUpdate(table, cells, generator);
@@ -157,7 +154,7 @@ public class GeoWorkload extends CoreWorkload {
     }
   }
 
-  public void doTransactionGeoNear(DB db, Generator generator) {
+  public void doTransactionGeoNear(GeoDB db, ParameterGenerator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.geoNear(table, cells, generator);
@@ -167,7 +164,7 @@ public class GeoWorkload extends CoreWorkload {
     }
   }
 
-  public void doTransactionGeoBox(DB db, Generator generator) {
+  public void doTransactionGeoBox(GeoDB db, ParameterGenerator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.geoBox(table, cells, generator);
@@ -177,7 +174,7 @@ public class GeoWorkload extends CoreWorkload {
     }
   }
 
-  public void doTransactionGeoIntersect(DB db, Generator generator) {
+  public void doTransactionGeoIntersect(GeoDB db, ParameterGenerator generator) {
     try {
       HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
       db.geoIntersect(table, cells, generator);
@@ -187,7 +184,7 @@ public class GeoWorkload extends CoreWorkload {
     }
   }
 
-  public void doTransactionGeoScan(DB db, Generator generator) {
+  public void doTransactionGeoScan(GeoDB db, ParameterGenerator generator) {
     try {
       db.geoScan(table, new Vector<HashMap<String, ByteIterator>>(), generator);
     } catch (Exception ex) {

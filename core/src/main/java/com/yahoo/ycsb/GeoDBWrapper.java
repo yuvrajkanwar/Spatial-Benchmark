@@ -17,6 +17,7 @@
 
 package com.yahoo.ycsb;
 
+import com.yahoo.ycsb.generator.geo.ParameterGenerator;
 import com.yahoo.ycsb.measurements.Measurements;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.Tracer;
@@ -27,8 +28,8 @@ import java.util.*;
  * Wrapper around a "real" DB that measures latencies and counts return codes.
  * Also reports latency separately between OK and failed operations.
  */
-public class DBWrapper extends DB {
-  private final DB db;
+public class GeoDBWrapper extends GeoDB {
+  private final GeoDB db;
   private final Measurements measurements;
   private final Tracer tracer;
 
@@ -50,7 +51,7 @@ public class DBWrapper extends DB {
 
 
 
-  public DBWrapper(final DB db, final Tracer tracer) {
+  public GeoDBWrapper(final GeoDB db, final Tracer tracer) {
     this.db = db;
     measurements = Measurements.getMeasurements();
     this.tracer = tracer;
@@ -246,5 +247,104 @@ public class DBWrapper extends DB {
       return res;
     }
   }
+
+  /**
+   * GEO operations.
+   *
+   * @param generator
+   * @return
+   */
+
+  public Status geoLoad(String table, ParameterGenerator generator) {
+    try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoLoad(table, generator);
+      long en = System.nanoTime();
+      measure("GEO_LOAD", res, ist, st, en);
+      measurements.reportStatus("GEO_LOAD", res);
+      return res;
+    }
+  }
+
+  public Status geoInsert(String table, HashMap<String, ByteIterator> result, ParameterGenerator generator) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildGeoInsertDocument();
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoInsert(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_INSERT", res, ist, st, en);
+      measurements.reportStatus("GEO_INSERT", res);
+      return res;
+    }
+  }
+
+
+  public Status geoUpdate(String table, HashMap<String, ByteIterator> result, ParameterGenerator generator) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      generator.buildGeoUpdatePredicate();
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoUpdate(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_UPDATE", res, ist, st, en);
+      measurements.reportStatus("GEO_UPDATE", res);
+      return res;
+    }
+  }
+
+  public Status geoNear(String table, HashMap<String, ByteIterator> result, ParameterGenerator generator) {
+    generator.buildGeoReadPredicate();
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoNear(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_NEAR", res, ist, st, en);
+      measurements.reportStatus("GEO_NEAR", res);
+      return res;
+    }
+  }
+
+  public Status geoBox(String table, HashMap<String, ByteIterator> result, ParameterGenerator generator) {
+    generator.buildGeoReadPredicate();
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoBox(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_BOX", res, ist, st, en);
+      measurements.reportStatus("GEO_BOX", res);
+      return res;
+    }
+  }
+
+  public Status geoIntersect(String table, HashMap<String, ByteIterator> result, ParameterGenerator generator) {
+    generator.buildGeoReadPredicate();
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoIntersect(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_INTERSECT", res, ist, st, en);
+      measurements.reportStatus("GEO_INTERSECT", res);
+      return res;
+    }
+  }
+
+
+  public Status geoScan(String table, Vector<HashMap<String, ByteIterator>> result, ParameterGenerator generator) {
+    try (final TraceScope span = tracer.newScope(scopeStringRead)) {
+      long ist = measurements.getIntendedtartTimeNs();
+      long st = System.nanoTime();
+      Status res = db.geoScan(table, result, generator);
+      long en = System.nanoTime();
+      measure("GEO_SCAN", res, ist, st, en);
+      measurements.reportStatus("GEO_SCAN", res);
+      return res;
+    }
+  }
+
 
 }

@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import com.yahoo.ycsb.Workload;
-import com.yahoo.ycsb.DB;
+import com.yahoo.ycsb.GeoDB;
 import com.yahoo.ycsb.measurements.Measurements;
 import com.yahoo.ycsb.workloads.CoreWorkload;
 
@@ -68,7 +68,7 @@ public class AccumuloTest {
   private static MiniAccumuloCluster cluster;
   private static Properties properties;
   private Workload workload;
-  private DB client;
+  private GeoDB client;
   private Properties workloadProps;
 
   private static boolean isWindows() {
