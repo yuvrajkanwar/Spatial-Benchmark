@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * A class that wraps the 2.x Couchbase SDK to be used with YCSB.
+ * A class that wraps the Couchbase SDK to be used with YCSB.
  *
  * <p> The following options can be passed when using this database client to override the defaults.
  *
@@ -190,7 +190,6 @@ public class Couchbase2Client extends GeoDB {
       bucket = cluster.openBucket(bucketName, bucketPassword);
       kvTimeout = env.kvTimeout();
     } catch (Exception ex) {
-      System.out.println(bucket);
       throw new DBException("Could not connect to Couchbase Bucket.", ex);
     }
     if (!kv && !syncMutResponse) {
@@ -381,7 +380,6 @@ public class Couchbase2Client extends GeoDB {
           .startRange(JsonArray.from(rp.get(0), rp.get(1)))
           .endRange(JsonArray.from(rp.get(2), rp.get(3)));
       SpatialViewResult queryResult = bucket.query(q);
-
       return queryResult != null ? Status.OK : Status.NOT_FOUND;
     } catch (Exception e) {
       System.err.println(e);
@@ -396,7 +394,6 @@ public class Couchbase2Client extends GeoDB {
       String boxFieldName1 = gen.getGeoPredicate().getNestedPredicateA().getName();
       JSONObject boxFieldValue1 = gen.getGeoPredicate().getNestedPredicateA().getValueA();
       JSONObject boxFieldValue2 = gen.getGeoPredicate().getNestedPredicateB().getValueA();
-
       HashMap<String, Object> boxFields = new ObjectMapper().readValue(boxFieldValue1.toString(), HashMap.class);
       HashMap<String, Object> boxFields1 = new ObjectMapper().readValue(boxFieldValue2.toString(), HashMap.class);
       List<Double> rp = new ArrayList<>();

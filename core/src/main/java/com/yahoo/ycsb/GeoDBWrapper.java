@@ -25,6 +25,7 @@ import org.apache.htrace.core.Tracer;
 import java.util.*;
 
 /**
+ * Author: Yuvraj
  * Wrapper around a "real" DB that measures latencies and counts return codes.
  * Also reports latency separately between OK and failed operations.
  */
