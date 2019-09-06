@@ -28,6 +28,7 @@ Executing Benchmark
 2. Couchbase:
 
 ./bin/ycsb load couchbase2 -P workloads/geo/workloadga -p couchbase.host="localhost:8091"
+
 ./bin/ycsb run couchbase2 -P workloads/geo/workloadga -p couchbase.host="localhost:8091"
     
 Yahoo! Cloud System Benchmark (YCSB)
