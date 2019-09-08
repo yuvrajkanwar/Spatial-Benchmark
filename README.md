@@ -10,11 +10,11 @@ Building from source
 
 To build the full distribution, with all database bindings:
 
-    mvn clean package
+    mvn clean package -DskipTests
 
 To build a single database binding:
 
-    mvn -pl com.yahoo.ycsb:mongodb-binding -am clean package
+    mvn -pl com.yahoo.ycsb:mongodb-binding -am clean package -DskipTests
 
 Executing Benchmark
 --------------------
