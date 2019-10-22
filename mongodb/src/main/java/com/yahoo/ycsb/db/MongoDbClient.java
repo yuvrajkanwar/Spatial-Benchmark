@@ -137,7 +137,7 @@ public class MongoDbClient extends GeoDB {
    */
 
   @Override
-  public Status geoLoad(String table, ParameterGenerator generator) {
+  public Status geoLoad(String table, ParameterGenerator generator, Double recordCount) {
 
     try {
       String key = generator.getIncidentsIdRandom();
@@ -157,7 +157,14 @@ public class MongoDbClient extends GeoDB {
       }
 
       generator.putIncidentsDocument(key, queryResult.toJson());
-      System.out.println("Key : "+key+" Query Result :"+queryResult.toJson());
+      System.out.println("Key : " + key + " Query Result :" + queryResult.toJson());
+      generator.buildGeoInsertDocument();
+      int inserts = (int) Math.round(recordCount) / Integer.parseInt(GeoWorkload.TOTAL_DOCS_DEFAULT);
+      System.out.println("inserting documents to Database: count:" +  inserts);
+      for (double i = inserts; i > 0; i--) {
+        HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
+        geoInsert(table, cells, generator);
+      }
       return Status.OK;
     } catch (Exception e) {
       System.err.println(e.toString());

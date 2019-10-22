@@ -128,7 +128,7 @@ public abstract class GeoDB extends DB {
    */
 
   // overloading the standard "insert" operation as it used by YCSB for loading data
-  public Status geoLoad(String table, ParameterGenerator generator) {
+  public Status geoLoad(String table, ParameterGenerator generator, Double recordCount) {
     return null;
   }
 

@@ -256,11 +256,11 @@ public class GeoDBWrapper extends GeoDB {
    * @return
    */
 
-  public Status geoLoad(String table, ParameterGenerator generator) {
+  public Status geoLoad(String table, ParameterGenerator generator, Double recordCount) {
     try (final TraceScope span = tracer.newScope(scopeStringInsert)) {
       long ist = measurements.getIntendedtartTimeNs();
       long st = System.nanoTime();
-      Status res = db.geoLoad(table, generator);
+      Status res = db.geoLoad(table, generator, recordCount);
       long en = System.nanoTime();
       measure("GEO_LOAD", res, ist, st, en);
       measurements.reportStatus("GEO_LOAD", res);

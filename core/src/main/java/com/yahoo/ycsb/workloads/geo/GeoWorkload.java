@@ -29,6 +29,9 @@ public class GeoWorkload extends CoreWorkload {
   public static final String TOTAL_DOCS_DEFAULT = "13348";
   public static final String DOCS_START_VALUE = "1001";
 
+  public static final String RECORD_COUNT = "recordcount";
+  public static final String RECORD_COUNT_DEFAULT = "1000000";
+
   public static final String GEO_INSERT_PROPORTION_PROPERTY = "geo_insert";
   public static final String GEO_INSERT_PROPORTION_PROPERTY_DEFAULT = "0.00";
 
@@ -59,7 +62,7 @@ public class GeoWorkload extends CoreWorkload {
   public static final String GEO_QUERY_OFFSET_MAX_DEFAULT = "100";
   public static final String GEO_REQUEST_DISTRIBUTION = "geo_request_distribution";
   public static final String GEO_REQUEST_DISTRIBUTION_DEFAULT = "uniform";
-
+  private static double recordCount = 1000000;
 
   @Override
   public Object initThread(Properties p, int mythreadid, int threadcount) throws WorkloadException {
@@ -79,12 +82,14 @@ public class GeoWorkload extends CoreWorkload {
   public void init(Properties p) throws WorkloadException {
     super.init(p);
     operationchooser = createOperationGenerator(p);
+    recordCount = Double.parseDouble(
+        p.getProperty(RECORD_COUNT, RECORD_COUNT_DEFAULT));
   }
 
   @Override
   public boolean doInsert(GeoDB db, Object threadstate) {
     Status status;
-    status = db.geoLoad(table, (MemcachedGenerator) threadstate);
+    status = db.geoLoad(table, (MemcachedGenerator) threadstate, recordCount);
     return null != status && status.isOk();
   }
 

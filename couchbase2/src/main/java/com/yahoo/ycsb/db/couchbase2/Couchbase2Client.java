@@ -46,6 +46,7 @@ import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
 import com.yahoo.ycsb.StringByteIterator;
 import com.yahoo.ycsb.generator.geo.ParameterGenerator;
+import com.yahoo.ycsb.workloads.geo.GeoWorkload;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONObject;
 import rx.Observable;
@@ -222,7 +223,7 @@ public class Couchbase2Client extends GeoDB {
   }
 
   @Override
-  public Status geoLoad(String table, ParameterGenerator generator) {
+  public Status geoLoad(String table, ParameterGenerator generator, Double recordCount) {
     try {
       String docId = generator.getIncidentsIdRandom();
       RawJsonDocument doc = bucket.get(docId, RawJsonDocument.class);
@@ -230,6 +231,13 @@ public class Couchbase2Client extends GeoDB {
         generator.putIncidentsDocument(docId, doc.content().toString());
       } else {
         System.err.println("Error getting document from DB: " + docId);
+      }
+      generator.buildGeoInsertDocument();
+      int inserts = (int) Math.round(recordCount) / Integer.parseInt(GeoWorkload.TOTAL_DOCS_DEFAULT);
+      System.out.println("inserting documents to Database: count:" + inserts);
+      for (double i = inserts; i > 0; i--) {
+        HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
+        geoInsert(table, cells, generator);
       }
     } catch (Exception ex) {
       ex.printStackTrace();
