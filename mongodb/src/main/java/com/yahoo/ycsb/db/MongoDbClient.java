@@ -159,8 +159,7 @@ public class MongoDbClient extends GeoDB {
       generator.putIncidentsDocument(key, queryResult.toJson());
       System.out.println("Key : " + key + " Query Result :" + queryResult.toJson());
       generator.buildGeoInsertDocument();
-      int inserts = (int) Math.round(recordCount) / Integer.parseInt(GeoWorkload.TOTAL_DOCS_DEFAULT);
-      System.out.println("inserting documents to Database: count:" +  inserts);
+      int inserts = (int) Math.round(recordCount/Integer.parseInt(GeoWorkload.TOTAL_DOCS_DEFAULT))-1;
       for (double i = inserts; i > 0; i--) {
         HashMap<String, ByteIterator> cells = new HashMap<String, ByteIterator>();
         geoInsert(table, cells, generator);
