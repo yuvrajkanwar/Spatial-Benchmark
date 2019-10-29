@@ -1,6 +1,7 @@
 
 recordcount=1000
 operationcount=100000
+# not for geo
 requestdistribution=uniform
 readallfields=true
 readproportion=0
@@ -21,7 +22,7 @@ geo_box=0
 geo_intersect=0
 geo_scan=0
 
-# zipfian, uniform
+# zipfian, uniform, latest
 geo_request_distribution=uniform
 
 geo_storage_host=localhost

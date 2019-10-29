@@ -34,6 +34,7 @@ public abstract class ParameterGenerator {
   private int queryOffsetMax = 0;
 
   private boolean isZipfian = false;
+  private boolean isLatest = false;
   private ZipfianGenerator zipfianGenerator = null;
 
   private DataFilter geoPredicate;
@@ -115,6 +116,8 @@ public abstract class ParameterGenerator {
 
     isZipfian = p.getProperty(GeoWorkload.GEO_REQUEST_DISTRIBUTION,
         GeoWorkload.GEO_REQUEST_DISTRIBUTION_DEFAULT).equals("zipfian");
+    isLatest = p.getProperty(GeoWorkload.GEO_REQUEST_DISTRIBUTION,
+        GeoWorkload.GEO_REQUEST_DISTRIBUTION_DEFAULT).equals("latest");
   }
 
   public final Set<String> getAllGeoFields() {
@@ -173,15 +176,21 @@ public abstract class ParameterGenerator {
   }
 
   public void buildGeoReadPredicate() {
-    buildGeoInsertDocument();
+    String storageKey = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER +
+        GEO_METAFIELD_INSERTDOC + GEO_SYSTEMFIELD_DELIMITER + getIncidentIdWithDistribution();
+
+    String docBody = getVal(storageKey);
+    String keyPrefix = GEO_DOCUMENT_PREFIX_INCIDENTS + GEO_SYSTEMFIELD_DELIMITER;
+    int docCounter = increment(keyPrefix + GEO_SYSTEMFIELD_INSERTDOC_COUNTER, 1);
+
+    geoPredicate = new DataFilter();
+    geoPredicate.setDocid(keyPrefix + docCounter);
+    geoPredicate.setValue(docBody);
     DataFilter queryPredicate = new DataFilter();
     queryPredicate.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
-    double[] latLong = {-111-rand.nextDouble(), 33+rand.nextDouble()};
-    JSONArray jsonArray = new JSONArray(latLong);
-    JSONObject jobj = new JSONObject().put("type", "Point");
-    jobj.put("coordinates", jsonArray);
+    JSONObject obj = new JSONObject(geoPredicate.getValue());
+    JSONObject jobj = (JSONObject) obj.get("geometry");
     queryPredicate.setValueA(jobj);
-
 
     buildGeoInsertDocument();
     DataFilter queryPredicate2 = new DataFilter();
@@ -195,6 +204,8 @@ public abstract class ParameterGenerator {
     buildGeoInsertDocument();
     DataFilter queryPredicate3 = new DataFilter();
     queryPredicate3.setName(GEO_FIELD_INCIDENTS_GEOMETRY);
+    double[] latLong = {-111-rand.nextDouble(), 33+rand.nextDouble()};
+    JSONArray jsonArray = new JSONArray(latLong);
     double[] latLong3 = {-111-rand.nextDouble(), 33+rand.nextDouble()};
     double[] latLong4 = {-111-rand.nextDouble(), 33+rand.nextDouble()};
     JSONArray jsonArray3 = new JSONArray(latLong3);
@@ -250,6 +261,9 @@ public abstract class ParameterGenerator {
 
   public String getIncidentIdWithDistribution() {
     if (isZipfian) {
+      return getNumberZipfianUnifrom(getTotalIncidentsCount())+"";
+    }
+    if (isLatest) {
       return getNumberZipfianLatests(getTotalIncidentsCount())+"";
     }
     return getIncidentsIdRandom();
@@ -411,11 +425,11 @@ public abstract class ParameterGenerator {
 
 
 
-  private int getNumberZipfianUnifrom() {
+  private int getNumberZipfianUnifrom(int totalItems) {
     if (zipfianGenerator == null) {
       zipfianGenerator = new ZipfianGenerator(1L, Long.valueOf(getStoredIncidentsCount()-1).longValue());
     }
-    return  zipfianGenerator.nextValue().intValue();
+    return  totalItems - zipfianGenerator.nextValue().intValue();
   }
 
 
